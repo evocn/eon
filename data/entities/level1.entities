@@ -1,0 +1,10 @@
+[1] # Version
+
+0	# kind
+0	# serial
+cubey	# name
+0 4.878 0	# position
+0 0 0 1	# orientation
+1	# scale
+0	# flags
+mesh_cube	# mesh_name
