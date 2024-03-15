@@ -3,15 +3,15 @@
 // Alex Hartford
 // June 2023
 
-entities_path :: "data/entities";
-
 save_entities :: (entities : [..] *Entity, filename : string) -> success : bool {
     builder : String_Builder;
     defer free_buffers(*builder);
 
-    print_to_builder(*builder, "[%] # Version\n\n", 1);
+    print_to_builder(*builder, "[%] # Version\n", 1);
 
     for entities {
+        append(*builder, "\n");
+
         if it.kind == {
             case;
                 success := serialize_structure(it.*, *builder);
@@ -19,7 +19,8 @@ save_entities :: (entities : [..] *Entity, filename : string) -> success : bool 
         }
     }
     write_entire_file(tprint("%/%", entities_path, filename), *builder);
-    log("Saved entities to \"%\".\n", filename);
+
+    //log(*log_serialization, "Saved entities to \"%\".\n", filename);
 
     return true;
 }
@@ -44,20 +45,15 @@ load_entities :: (entities : *[..] *Entity, filename : string) -> success : bool
 
     //log(*log_serialization, "Loaded entities from \"%\".\n", filename);
 
-    for <<entities {
-        found_mesh : bool;
-        it.mesh, found_mesh = table_find(*meshes, it.mesh_name);
-        if !found_mesh {
-            log_error("Entity Mesh not found: %.", it.mesh_name);
-            it.mesh = null;
-        }
+    for entities.* {
+        find_entity_mesh(it);
     }
 
     return true;
 }
 
 // @TODO: Get that logger stuff figured out!
-//log_serialization : Log_Section;
+log_serialization : Log_Section;
 
 // %1          = member name
 // type_of(%1) = member type
@@ -147,6 +143,11 @@ serialize  :: (to_serialize: Entity, name := "", builder: *String_Builder) -> su
     return success;
 }
 
+serialize  :: (to_serialize: Transform, name := "", builder: *String_Builder) -> success: bool { 
+    success := serialize_structure(to_serialize, builder);
+    return success;
+}
+
 serialize  :: (to_serialize: Entity_Kind, name : string, builder: *String_Builder) -> success: bool {
     print_to_builder(builder, "%", cast(int)to_serialize);
     if name print_to_builder(builder, "\t# %", name);
@@ -170,8 +171,11 @@ serialize  :: (to_serialize: Entity_Flags, name : string, builder: *String_Build
 //
 //
 
-get_next_entity :: (handler : *Text_File_Handler) -> entity: *Entity, success: bool
-{
+get_next_entity :: (handler : *Text_File_Handler) -> entity: *Entity, success: bool {
+    a: Allocator;
+    a.proc = flat_pool_allocator_proc;
+    a.data = *entity_pool;
+
     kind_int, is_another_entity_to_get := parse_int(handler);
     if !is_another_entity_to_get return null, false;
 
@@ -179,7 +183,7 @@ get_next_entity :: (handler : *Text_File_Handler) -> entity: *Entity, success: b
 
     if kind == {
         case;
-            entity := New(Entity);
+            entity := New(Entity, allocator=a);
             success := unserialize_structure(entity, handler);
             if !success {
                 log_error("Unable to unserialize Unit type in file %.\n");
@@ -190,8 +194,7 @@ get_next_entity :: (handler : *Text_File_Handler) -> entity: *Entity, success: b
     }
 }
 
-unserialize_structure :: (s: *$T, handler: *Text_File_Handler) -> success: bool
-{
+unserialize_structure :: (s: *$T, handler: *Text_File_Handler) -> success: bool {
     success : bool;
     #insert #run for_each_member(T, "if !unserialize(*s.%1, handler) return false;\n" );
     return true;
@@ -222,9 +225,15 @@ unserialize  :: (to_unserialize: *bool, handler : *Text_File_Handler) -> success
     return success;
 }
 unserialize  :: (to_unserialize: *string, handler : *Text_File_Handler) -> success: bool { 
-    success : bool;
-    <<to_unserialize, success = parse_string(handler);
-    if <<to_unserialize == "!" then <<to_unserialize = "";
+    str, success := parse_string(handler);
+    if str == "!" then to_unserialize.* = "";
+    else {
+        a: Allocator;
+        a.proc = flat_pool_allocator_proc;
+        a.data = *entity_pool;
+
+        to_unserialize.* = copy_string(str, allocator=a);
+    }
     return success;
 }
 unserialize  :: (to_unserialize: *Vector3, handler : *Text_File_Handler) -> success: bool { 
@@ -239,6 +248,11 @@ unserialize  :: (to_unserialize: *Quaternion, handler : *Text_File_Handler) -> s
 }
 
 unserialize  :: (to_unserialize: *Entity, handler: *Text_File_Handler) -> success: bool {
+    success := unserialize_structure(to_unserialize, handler);
+    return success;
+}
+
+unserialize  :: (to_unserialize: *Transform, handler: *Text_File_Handler) -> success: bool {
     success := unserialize_structure(to_unserialize, handler);
     return success;
 }

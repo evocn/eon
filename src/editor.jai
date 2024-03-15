@@ -11,7 +11,7 @@ update_and_draw_editor :: (entities : *[..] *Entity) {
 
     if !program_state.imgui_capturing_mouse {
         if program_state.mode == .EDITOR {
-            maybe_select_entity(<<entities);
+            maybe_select_entity(entities.*);
         }
     }
 
@@ -38,10 +38,9 @@ update_and_draw_editor :: (entities : *[..] *Entity) {
 }
 
 draw_all_windows :: (entities : *[..] *Entity) {
-    meshes_display();
     entities_window(entities);
     if editor.selected_entity != -1 {
-        entity_window((<<entities)[editor.selected_entity], entities);
+        entity_window(entities.*[editor.selected_entity], entities);
     }
 
     settings_window();
@@ -53,13 +52,18 @@ draw_all_windows :: (entities : *[..] *Entity) {
     shadow_frustum_window();
 }
 
+theta : float;
 entity_window :: (using entity: *Entity, entities : *[..] *Entity) {
     ImGui.Begin("Entity");
     {
         ImGui.Text("% | %", serial, name);
 
         ImGui.SliderFloat3("Position", *position.component, -50.0, 50.0);
-        ImGui.SliderFloat4("Orientation", *orientation.component, -50.0, 50.0);
+
+        if ImGui.SliderFloat("X", xx *theta, -PI, PI) {
+            set_from_axis_and_angle(*orientation, 1.0, 0.0, 0.0, xx theta);
+        }
+
         ImGui.SliderFloat("Scale", *scale, 0.0, 3.0);
 
         if ImGui.Button("delete") {
@@ -71,6 +75,13 @@ entity_window :: (using entity: *Entity, entities : *[..] *Entity) {
             duplicate_entity(entities, editor.selected_entity);
             editor.selected_entity += 1;
         }
+
+        for mesh_catalogue {
+            if ImGui.Selectable(to_c_string(tprint("%", it_index)), entities.*[editor.selected_entity].mesh_name == it_index) {
+                entities.*[editor.selected_entity].mesh_name = it_index;
+                find_entity_mesh(entities.*[editor.selected_entity]);
+            }
+        }
     }
     ImGui.End();
 }
@@ -80,31 +91,17 @@ entities_window :: (entities : *[..] *Entity) {
     {
         ImGui.Text("Current level: %", program_state.current_level_name);
         if(ImGui.Button("Save")) {
-            success := save_entities(<<entities, program_state.current_level_name);
+            success := save_entities(entities.*, program_state.current_level_name);
         }
         ImGui.SameLine();
         if(ImGui.Button("load")) {
             success := load_entities(entities, program_state.current_level_name);
         }
 
-        if ImGui.BeginListBox("###420") {
-            for <<entities {
+        if ImGui.BeginListBox("###420", Vector2.{-FLOAT32_MIN, -FLOAT32_MIN}) {
+            for entities.* {
                 if ImGui.Selectable(to_c_string(tprint("% | %", it_index, it.name)), editor.selected_entity == it_index)
                     editor.selected_entity = it_index;
-            }
-            ImGui.EndListBox();
-        }
-    }
-    ImGui.End();
-}
-
-meshes_display :: () {
-    ImGui.Begin("Meshes");
-    {
-        if ImGui.BeginListBox("###69") {
-            for meshes {
-                if ImGui.Selectable(to_c_string(tprint("%", it_index)), editor.selected_mesh == it_index)
-                    editor.selected_mesh = it_index;
             }
             ImGui.EndListBox();
         }
@@ -115,12 +112,9 @@ meshes_display :: () {
 settings_window :: () {
     ImGui.Begin("Settings");
     {
-        if ImGui.Checkbox("Line Mode", *settings.line_mode) {
-            if settings.line_mode
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            else
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
+        ImGui.Checkbox("Line Mode", *settings.line_mode);
+        ImGui.Checkbox("Bounding Boxes", *settings.draw_bounding_boxes);
+        ImGui.Checkbox("Shadow Debug", *settings.shadow_debug);
     }
     ImGui.End();
 }
@@ -144,7 +138,7 @@ undo_redo_window :: () {
             }
         }
 
-        if ImGui.BeginListBox("###1001") {
+        if ImGui.BeginListBox("###1001", Vector2.{-FLOAT32_MIN, -FLOAT32_MIN}) {
             for editor_commands {
                 ImGui.Selectable(to_c_string(tprint("% | %", it_index, it.name)), current_editor_command_index == it_index);
             }
@@ -158,6 +152,7 @@ shadow_frustum_window :: () {
     ImGui.Begin("Shadow Frustum");
     {
         orthographic_frustum_editor(*shadow_map.frustum);
+        ImGui.SliderFloat3("Origin", *shadow_map.light_position.component, -1.0, 1.0);
     }
     ImGui.End();
 }

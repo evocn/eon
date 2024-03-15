@@ -4,14 +4,12 @@
 // June 2023
 
 init :: () -> bool {
-    print("Initializing...\n");
+    log("Initializing...\n");
     start_time := cast(float32)get_time();
 
     {
         // SDL
-
         SDL_Init(SDL_INIT_VIDEO);
-
         // Create an application window with the following settings:
         window = SDL_CreateWindow("Everett",
             600, 250, cast(s32)window_width, cast(s32)window_height,
@@ -37,7 +35,6 @@ init :: () -> bool {
     
     {
         // OpenGL
-
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
         // @TODO: This is not a complete solution. In order to properly do alpha blending...
@@ -48,14 +45,13 @@ init :: () -> bool {
         glEnable(GL_DEPTH_TEST); 
         glDepthMask(GL_TRUE);
 
-        glLineWidth(5);
+        glLineWidth(2);
         glPointSize(5);
     }
 
 
     {
         // ImGui
-
         imgui_context = ImGui.CreateContext();
         ImGui_ImplSdl_Init(window);
 
@@ -74,7 +70,6 @@ init :: () -> bool {
         // Shaders
         render_context.basic_shader     = make_shader("basic.vs", "basic.fs");
         render_context.main_shader      = make_shader("main.vs", "main.fs");
-        render_context.animation_shader = make_shader("anim.vs", "main.fs");
         render_context.skybox_shader    = make_shader("skybox.vs", "skybox.fs");
 
         render_context.screen_shader    = make_shader("screen.vs", "texture.fs");
@@ -82,21 +77,51 @@ init :: () -> bool {
 
         render_context.depth_shader     = make_shader("depth.vs", "depth.fs");
 
+        render_context.highlight_shader = make_shader("main.vs", "highlight.fs");
+
+        // Rendering Setup
+        {
+            max_uniform_components : s32;
+            glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, *max_uniform_components);
+            assert(max_uniform_components > 16 * MAX_JOINTS, "System's max uniform components: %. How many you want to send : %.\n", max_uniform_components, 16 * MAX_JOINTS);
+        }
+
         // Meshes
-        table_add(*meshes, "mesh_bird", new_skinned_mesh("bird.mesh"));
-        table_add(*meshes, "mesh_cube", new_skinned_mesh("cube.mesh"));
-        table_add(*meshes, "mesh_sphere", new_skinned_mesh("sphere.mesh"));
-        table_add(*meshes, "mesh_mannequin", new_skinned_mesh("mannequin.mesh"));
+        {
+            a: Allocator;
+            a.proc = flat_pool_allocator_proc;
+            a.data = *mesh_pool;
+
+            mesh_catalogue.allocator = a;
+
+            new_mesh :: (name : string) {
+                mesh := create_mesh_from_gltf(tprint("%.glb", name));
+                locator, pointer := bucket_array_add(*mesh_storage, mesh);
+                table_add(*mesh_catalogue, name, pointer);
+            }
+
+            new_mesh("cube");
+            //new_mesh("finch");
+            new_mesh("bird");
+        }
 
         // Primitives
         init_quad_rendering_objects(*quad);
         init_cube_rendering_objects(*cube);
 
         // Fonts
-        table_add(*fonts, "Header", make_font("JosefinSans-Regular.ttf", 24));
+        {
+            a: Allocator;
+            a.proc = flat_pool_allocator_proc;
+            a.data = *forever_pool;
 
-        // Textures
-        table_add(*textures, "missing", load_texture("missing.png"));
+            fonts.allocator = a;
+            table_add(*fonts, "Header", make_font("JosefinSans-Regular.ttf", xx (window_height / 40)));
+
+            // Textures
+            textures.allocator = a;
+            table_add(*textures, "missing", load_texture_from_file("missing.png"));
+        }
 
         // Rendering Structures
         load_cubemap_textures(*render_context.skybox, "512_cartoon_green");
@@ -104,22 +129,23 @@ init :: () -> bool {
         init_rendering_objects(*shadow_map);
         init_rendering_objects(*framebuffer);
 
-        // @TODO!
-        /*
+
         // Animations
-        anim : Sampled_Animation;
-        loaded = load_animation_from_file(*anim, "assets/animations/idle.anim");
-        if !loaded
-            log_error ("Could not load % animation.", basename);
+        success := load_animation_from_file(*anim, "assets/animations/test.anim");
+        if !success {
+            log_error("Could not load % animation.", basename);
+        }
 
-        init_rendering_objects(animation_shader);
+        animation_time = 0.0;
+        animation_speed_in_fps = 20.0;
 
-        animation_time := 0.0;
-        animation_speed_in_fps := 20.0;
+        bird_mesh:, success = table_find(*mesh_catalogue, "bird");
+        if !success {
+            log_error("Bird not found.\n");
+        }
 
-        pose : Skeleton_Pose;
-        pose = make_pose_for_skeleton(*mesh.skeleton);
-        */
+        pose = make_pose_for_skeleton(*bird_mesh.skeleton);
+
 
         set_camera();
         switch_mode(program_state.mode);
@@ -127,7 +153,7 @@ init :: () -> bool {
 
     end_time := cast(float32)get_time();
 
-    print("Done! (took % seconds)\n", end_time - start_time);
+    log("Done! (took % seconds)\n", end_time - start_time);
 
     return true;
 }

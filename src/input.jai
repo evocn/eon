@@ -30,10 +30,13 @@ handle_events :: () {
     event : SDL_Event;
     while SDL_PollEvent(*event) {
         ImGui_ImplSdl_ProcessEvent(*event);
+
         if event.type == {
             case SDL_QUIT;
                 running = false;
             case SDL_KEYUP;
+                if program_state.imgui_capturing_keyboard then continue;
+
                 if event.key.keysym.sym == SDLK_w input.up    = false;
                 if event.key.keysym.sym == SDLK_a input.left  = false;
                 if event.key.keysym.sym == SDLK_s input.down  = false;
@@ -44,19 +47,21 @@ handle_events :: () {
                 if event.key.keysym.sym == SDLK_e      input.button_4 = false;
 
             case SDL_KEYDOWN;
+                if program_state.imgui_capturing_keyboard then continue;
+
                 if event.key.keysym.sym == SDLK_ESCAPE running = false;
 
                 // Settings
                 if event.key.keysym.sym == SDLK_l {
-                    if settings.line_mode
-                        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                    else
-                        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                     settings.line_mode = !settings.line_mode;
                 }
 
+                if event.key.keysym.sym == SDLK_b {
+                    settings.draw_bounding_boxes = !settings.draw_bounding_boxes;
+                }
+
                 if event.key.keysym.sym == SDLK_g {
-                    shadow_debug = !shadow_debug;
+                    settings.shadow_debug = !settings.shadow_debug;
                 }
 
                 if event.key.keysym.sym == SDLK_0 {
@@ -82,12 +87,15 @@ handle_events :: () {
                 if event.key.keysym.sym == SDLK_q      input.button_3 = true;
                 if event.key.keysym.sym == SDLK_e      input.button_4 = true;
 
-
             case SDL_MOUSEBUTTONDOWN;
+                if program_state.imgui_capturing_mouse then continue;
+
                 if event.button.button == SDL_BUTTON_LEFT input.left_click = true;
                 if event.button.button == SDL_BUTTON_RIGHT input.right_click = true;
 
             case SDL_MOUSEBUTTONUP;
+                if program_state.imgui_capturing_mouse then continue;
+
                 if event.button.button == SDL_BUTTON_LEFT input.left_click = false;
                 if event.button.button == SDL_BUTTON_RIGHT input.right_click = false;
 

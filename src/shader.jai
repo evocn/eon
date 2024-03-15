@@ -33,8 +33,21 @@ use_main_shader :: () -> Shader {
     light_space_matrix := get_shadow_map_projection_matrix(shadow_map) * get_shadow_map_view_matrix(shadow_map);
     set_mat4(shader, "light_space_matrix", light_space_matrix);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, shadow_map.depth_buffer.buffer);
+    bind_id := bind_texture(shadow_map.depth_buffer.buffer);
+    set_int(shader, "shadow_map", bind_id);
+
+    return shader;
+}
+
+use_highlight_shader :: () -> Shader {
+    shader := render_context.highlight_shader;
+    use_shader(shader);
+
+    set_mat4(shader, "projection", camera.projection);
+    set_mat4(shader, "view", camera.view);
+
+    oscillating := 1.0 - sin(cast(float32)get_time() * 5);
+    set_float(shader, "highlight", oscillating);
 
     return shader;
 }
@@ -77,12 +90,14 @@ disable_shaders :: () { glUseProgram(0); }
 make_shader :: (vertex_filename: string, fragment_filename: string) -> Shader
 {
     vs_text, vertex_success := read_entire_file(tprint("%/%", shaders_path, vertex_filename), log_errors = false);
+    defer free(vs_text.data);
     if !vertex_success {
         log_error("Could not read vertex shader: %", vertex_filename);
         return 0;
     }
 
     fs_text, fragment_success := read_entire_file(tprint("%/%", shaders_path, fragment_filename), log_errors = false);
+    defer free(fs_text.data);
     if !fragment_success {
         log_error("Could not read fragment shader: %", fragment_filename);
         return 0;

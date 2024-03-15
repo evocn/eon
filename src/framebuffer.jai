@@ -6,7 +6,7 @@
 framebuffer : Framebuffer;
 
 Framebuffer :: struct {
-    width, height : u32 = default_window_width, default_window_height;
+    width, height : u32 = default_framebuffer_width, default_framebuffer_height;
     fbo, color_buffer, depth_buffer, rbo : GLuint;
 }
 

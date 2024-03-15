@@ -3,9 +3,17 @@
 // Alex Hartford
 // June 2023
 
-bind :: (texture : Texture, bind_id : u32) {
-	bind_texture(texture.id, bind_id);
+next_bind_id : GLuint = 0;
+
+bind_texture :: (texture_id : GLuint) -> GLuint {
+    bind_id : GLuint = GL_TEXTURE0 + next_bind_id;
+	glActiveTexture(bind_id);
+    next_bind_id += 1;
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    return next_bind_id - 1;
 }
+
 clear_texture :: (using texture : Texture) {
 	glDeleteTextures(1, *id);
 }
@@ -21,22 +29,44 @@ Texture :: struct {
 
 textures_path :: "assets/textures";
 
-load_texture :: (filename : string) -> Texture {
-	using result : Texture;
+load_texture_from_memory :: (memory : string) -> Texture {
+	texture : Texture;
+
+    data := stbi_load_from_memory(temp_c_string(memory), xx memory.count, xx *texture.width, xx *texture.height, xx *texture.dim, 4);
+
+	if(!data) {
+		log_error("Failed to load texture from data.\n");
+        return .{};
+	}
+
+    set_up_texture(*texture, data);
+
+    return texture;
+}
+
+load_texture_from_file :: (filename : string) -> Texture {
+	texture : Texture;
 
 	cstr_path := temp_c_string(tprint("%/%", textures_path, filename));
-	data := stbi_load(cstr_path, xx *width, xx *height, xx *dim, 4); defer stbi_image_free(data);
+	data := stbi_load(cstr_path, xx *texture.width, xx *texture.height, xx *texture.dim, 4);
 
 	if(!data) {
 		log_error("Failed to load texture %.\n", filename);
-        assert(false);
+        return .{};
 	}
+
+    set_up_texture(*texture, data);
+
+    return texture;
+}
+
+set_up_texture :: (using texture : *Texture, data : *u8) {
 	fmt : GLenum;
 	if dim == 1 then fmt = GL_RED;
 	else if dim == 3 || dim == 4 then fmt = GL_RGBA;
 	else {
         log_error("Unknown image format: \"%\".\n", dim);
-        return .{};
+        return;
 	}
 
 	glGenTextures(1, *id);
@@ -52,15 +82,10 @@ load_texture :: (filename : string) -> Texture {
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	return result;
+    stbi_image_free(data);
 }
 
 #scope_file
-
-bind_texture :: (texture_id : u32, bind_id : u32) {
-	glActiveTexture(GL_TEXTURE0 + bind_id);
-	glBindTexture(GL_TEXTURE_2D, texture_id);
-}
 
 make_image :: (width : u32, height : u32, format : GLenum) -> Texture {
 	return make_texture(width, height, format, 0, 0, .[

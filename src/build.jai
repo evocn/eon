@@ -30,31 +30,37 @@ build :: () {
 	compiler_begin_intercept(w);
 
     add_build_file(tprint("%/main.jai", #filepath), w);
-    add_build_file(tprint("%/utils.jai", #filepath), w);
 
-    add_build_file(tprint("%/program_mode.jai", #filepath), w);
+    add_build_file(tprint("%/utils.jai", #filepath), w);
     add_build_file(tprint("%/init.jai", #filepath), w);
     add_build_file(tprint("%/imgui_init.jai", #filepath), w);
     add_build_file(tprint("%/input.jai", #filepath), w);
     add_build_file(tprint("%/camera.jai", #filepath), w);
+    add_build_file(tprint("%/collision.jai", #filepath), w);
 
-    add_build_file(tprint("%/debug.jai", #filepath), w);
+    add_build_file(tprint("%/program_mode.jai", #filepath), w);
 
     add_build_file(tprint("%/editor.jai", #filepath), w);
     add_build_file(tprint("%/undo.jai", #filepath), w);
     add_build_file(tprint("%/gizmos.jai", #filepath), w);
-    add_build_file(tprint("%/collision.jai", #filepath), w);
 
+    add_build_file(tprint("%/debug.jai", #filepath), w);
+
+    // Levels
     add_build_file(tprint("%/entity.jai", #filepath), w);
     add_build_file(tprint("%/serialization.jai", #filepath), w);
 
-    add_build_file(tprint("%/mesh.jai", #filepath), w);
-    add_build_file(tprint("%/animation.jai", #filepath), w);
+    // Gameplay
+    add_build_file(tprint("%/simulate.jai", #filepath), w);
+    add_build_file(tprint("%/body.jai", #filepath), w);
+
+    // Rendering
+    add_build_file(tprint("%/render.jai", #filepath), w);
     add_build_file(tprint("%/primitives.jai", #filepath), w);
     add_build_file(tprint("%/parse_utils.jai", #filepath), w);
-    add_build_file(tprint("%/load_obj.jai", #filepath), w);
+    add_build_file(tprint("%/mesh.jai", #filepath), w);
+    add_build_file(tprint("%/animation.jai", #filepath), w);
 
-    add_build_file(tprint("%/render.jai", #filepath), w);
     add_build_file(tprint("%/color.jai", #filepath), w);
     add_build_file(tprint("%/light.jai", #filepath), w);
     add_build_file(tprint("%/frustum.jai", #filepath), w);

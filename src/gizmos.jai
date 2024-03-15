@@ -24,11 +24,7 @@ find_which_entity_pointed_at :: (entities: [..] *Entity) {
     ray := generate_mouse_ray(xx x, xx y);
 
     for entities {
-        new_box : Box;
-        if it.kind == {
-            case;
-                new_box = Box.{it.position - Vector3.{1, 1, 0}, it.position + Vector3.{1, 1, 1}};
-        }
+        new_box := calculate_bounding_box(it);
 
         intersected := intersection(ray, new_box);
         if intersected {

@@ -1,0 +1,21 @@
+[1] # Version
+
+0	# kind
+0	# serial
+one	# name
+0	# flags
+0 0 0	# position
+0 0 0 1	# orientation
+1	# scale
+bird	# mesh_name
+2	# bounding_radius
+
+0	# kind
+0	# serial
+one	# name
+0	# flags
+-7.317 2.439 -4.878	# position
+0 0 0 1	# orientation
+1	# scale
+cube	# mesh_name
+2	# bounding_radius

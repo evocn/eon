@@ -119,6 +119,10 @@ Character_Glyph :: struct {
 };
 
 initialize_font :: (filename : string, size : u32) -> Font {
+    a: Allocator;
+    a.proc = flat_pool_allocator_proc;
+    a.data = *forever_pool;
+
     if !ft {
         initialize_freetype();
     }
@@ -137,6 +141,8 @@ initialize_font :: (filename : string, size : u32) -> Font {
 
     font : Font;
     font.height = size;
+
+    font.characters.allocator=a;
 
     zero : u32;
     top : u32 = 127;

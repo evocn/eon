@@ -4,36 +4,6 @@
 // June 2023
 // From the skeletal_animation example in the jai beta.
 
-/*
-In general, the names we use are a bit confusing because we have
-a sampled animation that comes from your disk, and we want to
-produce an animation on your screen. So there are terms that we
-use in the two contexts. To try and disambiguate:
-
-* A Joint is a coordinate system that is part of a hierarchy.
-  * There are different Joint structs for different contexts.
-
-* A Skeleton is the set of joints forming a hierarchy. 
-  * It is stored in the Skinned_Mesh.
-  * The joints in it does not move to produce an animation, they are just used as
-    reference to produce the final pose that you see on your screen.
-  * The joint structure for this is Skeleton.Joint.
-
-* A Skeleton_Pose is a snapshot of the joint hierarchy of a specific Skeleton.
-  * This is used to produce the skinning information to move the mesh you see
-    on the screen and uses a Skeleton for reference.
-  * The joint structure for this is Skeleton_Pose.Joint.
-
-* A Sampled_Animation is a set of poses (though we don't store it that way),
-  sampled from your animation editing program most of the time.
-  * This struct, contrary to a Skeleton_Pose, isn't associated to a
-    specific Skeleton, that way you can use a Sampled_Animation to apply
-    movement to a skeleton that does not have all the joints present in the
-    animation (and might have others that are not present).
-    This is why a Sampled_Animation does not have an explicitely defined hierarchy for
-    its joints, even though the joints' position/orientation/scale are expressed locally.
-*/
-
 Joint_Sample :: struct
 {
 	local_position : Vector3;
@@ -143,7 +113,7 @@ make_pose_for_skeleton :: (skeleton : *Skeleton) -> Skeleton_Pose #must
 {
 	result : Skeleton_Pose;
 	result.skeleton = skeleton;
-	result.joints = NewArray (skeleton.joints.count, Skeleton_Pose.Joint);
+	result.joints = NewArray(skeleton.joints.count, Skeleton_Pose.Joint);
 	
 	for * result.joints
 	{
@@ -157,7 +127,7 @@ make_pose_for_skeleton :: (skeleton : *Skeleton) -> Skeleton_Pose #must
 			it.parent = null;
 	}
 
-	reset_to_bind_pose (*result);
+	reset_to_bind_pose(*result);
 
 	return result;
 }
@@ -175,9 +145,7 @@ reset_to_bind_pose :: (using pose : *Skeleton_Pose)
 {
 	for * joints
 	{
-		it.local_position,
-		it.local_orientation,
-		it.local_scale = decompose_transform(skeleton.joints[it_index].local_bind_transform);
+		it.local_position, it.local_orientation, it.local_scale = decompose_transform(skeleton.joints[it_index].local_bind_transform);
 	}
 }
 
@@ -191,24 +159,6 @@ Interpolation_Mode :: enum s32
 interpolate_joint_samples :: inline (a : Joint_Sample, b : Joint_Sample, t : float,
                                      interpolation_mode : Interpolation_Mode) -> Joint_Sample #must
 {
-	// To interpolate joints, we use linear interpolation. This is
-	// fine for translation and scale, but for orientation we have
-	// to do it a bit differently due to the way quaternions work.
-	// In short, we can only use normalized quaternions to represent
-	// rotation in 3D, so to interpolate two quaternions we use
-	// normalized linear interpolation (hence the name nlerp) which
-	// is just a normal lerp followed by normalization.
-	// There is another method of interpolation called spherical
-	// interpolation (slerp), which is slower but has benefits over
-	// nlerp that in many cases are not noticeable. To not go into too
-	// much details, here are things that you can read to understand
-	// quaternions and interpolation:
-	//   * Visualizing quaternions, an explorable video series by 3Blue1Brown:
-	//    https://eater.net/quaternions
-	//   * Foundations of Game Engine Development, Volume 1: Mathematics by Eric Lengyel
-	//   * Understanding Slerp then not using it by Jonathan Blow (the link seems dead):
-	//    http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/
-
 	// When interpolating two quaternions together, because it can
 	// be thought of a point on a sphere, there are multiple
 	// possible straight paths we can take. In our case, we want the
@@ -223,10 +173,10 @@ interpolate_joint_samples :: inline (a : Joint_Sample, b : Joint_Sample, t : flo
 		// makes the quaternions' axes less than 90 degrees apart in that case, without
 		// changing the rotation the quaternion represents, and makes the interpolation
 		// take the shortest path.
-		if dot (first, second) < 0
+		if dot(first, second) < 0
 			second = -second;
 		
-		return nlerp (first, second, t);
+		return nlerp(first, second, t);
 	}
 
 	slerp_shortest :: (a : Quaternion, b : Quaternion, t : float) -> Quaternion #must
@@ -301,8 +251,8 @@ calculate_pose_transforms :: (using pose : *Skeleton_Pose)
 {
 	for * joints
 	{
-		local_transform := make_translation_matrix4 (it.local_position)
-			* make_scale_matrix4 (it.local_scale)
+		local_transform := make_translation_matrix4(it.local_position)
+			* make_scale_matrix4(it.local_scale)
 			* rotation_matrix(Matrix4, it.local_orientation);
 
         parent := it.parent;
@@ -325,12 +275,12 @@ generate_skinning_matrices :: (using pose : *Skeleton_Pose, transpose_result : b
 {
 	// The skinning matrices array isn't allocated as long as you don't call this function.
 	if !skinning_matrices.data
-		skinning_matrices = NewArray (joints.count, Matrix4, initialized = false);
-	calculate_pose_transforms (pose);
-	for i : 0..skinning_matrices.count - 1
+		skinning_matrices = NewArray(joints.count, Matrix4, initialized = false);
+	calculate_pose_transforms(pose);
+	for i : 0..skinning_matrices.count-1
 	{
 		skinning_matrices[i] = joints[i].model_space_transform * skeleton.joints[i].inverse_bind_transform;
 		if transpose_result
-			transpose (*skinning_matrices[i]);
+			transpose(*skinning_matrices[i]);
 	}
 }

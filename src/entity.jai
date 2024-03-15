@@ -4,28 +4,99 @@
 // June 2023
 
 Entity :: struct {
-    kind : Entity_Kind;
-    serial : u64;
-    name : string;
-
-    using position : Vector3;
-    orientation    : Quaternion;
-    scale := 1.0;
-
+    kind  : Entity_Kind;
+    serial: u64;
+    name  : string;
     flags : Entity_Flags;
+
+    using transform : Transform;
+    using body : Character_Body; @NoSerialize
 
     mesh_name : string;
 
-    mesh : *Skinned_Mesh;           @NoSerialize
+    bounding_radius : float = 2.0;
+
+
+    // Non-serialized data.
+    mesh : *Mesh; @NoSerialize
 }
 
 Entity_Kind :: enum {
-    BOX;
 }
 
 Entity_Flags :: enum_flags {
-    HIDDEN;
-    FROZEN;
+}
+
+update :: (using entity : *Entity, delta_time : float) {
+    update_transforms_with_input(entity, delta_time);
+}
+
+//
+//
+
+// @TODO: Get Orientation right with this.
+calculate_bounding_box :: (using entity : Entity) -> Box {
+    low_extent, high_extent := find_extents(mesh);
+    return Box.{position + rotate(low_extent, orientation) * scale, position + rotate(high_extent, orientation) * scale};
+}
+
+//
+//
+
+draw_entity :: (using entity : Entity, shader : Shader) {
+    if mesh {
+        bind_id := bind_texture(mesh.texture.id);
+        set_int(shader, "diffuse_texture", bind_id);
+
+        set_vec4(shader, "color_override", .{});
+
+        scale_mat   := make_scale_matrix4(Vector3.{scale, scale, scale});
+        rotation    := rotation_matrix(Matrix4, orientation);
+        translation := make_translation_matrix4(position);
+        model := translation * rotation * scale_mat;
+        set_mat4(shader, "model", model);
+
+        if mesh_name == "bird" {
+            bind_skinning_matrices(pose.skinning_matrices, shader);
+            set_int(shader, "animated", 1);
+        }
+        else {
+            bind_skinning_matrices(.[], shader);
+            set_int(shader, "animated", 0);
+        }
+
+        draw_mesh(mesh);
+    }
+    else {
+        log_error("Trying to draw entity % which has no mesh!\n", name);
+    }
+}
+
+draw_bounding_box :: (using entity : Entity, shader : Shader) {
+    box := calculate_bounding_box(entity);
+
+    scale_vector := Vector3.{box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z} / 2.0;
+    box_center   := Vector3.{box.max.x + box.min.x, box.max.y + box.min.y, box.max.z + box.min.z} / 2.0;
+
+    scale_mat    := make_scale_matrix4(scale_vector);
+    rotation     := rotation_matrix(Matrix4, orientation);
+    translation  := make_translation_matrix4(box_center);
+    model := translation * rotation * scale_mat;
+    set_mat4(shader, "model", model);
+
+    draw_cube();
+}
+
+//
+//
+
+find_entity_mesh :: (using entity: *Entity) {
+    found_mesh : bool;
+    mesh, found_mesh = table_find(*mesh_catalogue, mesh_name);
+    if !found_mesh {
+        log_error("Entity's mesh was not found: %.", mesh_name);
+        mesh = null;
+    }
 }
 
 // Generates a new spot in memory, avoids slicing off derived bits, etc.
@@ -36,39 +107,4 @@ copy_entity :: (using copy_from: *Entity) -> *Entity {
             memcpy(copy_to, copy_from, size_of(Entity));
             return copy_to;
     }
-}
-
-//
-//
-//
-
-draw_entity :: (using entity : *Entity, shader : Shader) {
-    if mesh {
-        scale_mat   := make_scale_matrix4(Vector3.{scale, scale, scale});
-        rotation    := rotation_matrix(Matrix4, orientation);
-        translation := make_translation_matrix4(position);
-        model := translation * rotation * scale_mat;
-        set_mat4(shader, "model", model);
-
-        draw_skinned_mesh(mesh, .[]);
-    }
-    else {
-        log_error("Trying to draw entity % which has no mesh!\n", name);
-    }
-}
-
-draw_selected_entity :: (using entity : *Entity, shader : Shader) {
-    oscillating := sin(cast(float32)get_time());
-    set_float(shader, "highlight", oscillating);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    draw_skinned_mesh(mesh, .[]);
-
-    // Set the Line Mode back to what it was before.
-    if settings.line_mode
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    else
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    set_float(shader, "highlight", 0.0);
 }

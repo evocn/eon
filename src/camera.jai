@@ -16,10 +16,9 @@ camera : struct
 	rotation     : Quaternion;
 	rotation_input : Vector2;
 
-	transform    : Matrix4;
-
-	view         : Matrix4;
-	projection   : Matrix4;
+	transform   : Matrix4;
+    view        : Matrix4;
+    projection  : Matrix4;
 
     ignore_next_call : bool;
 }
@@ -104,7 +103,9 @@ resolve_camera_inputs :: (delta_time : float)
 
     // Set Transforms
 	transform = make_translation_matrix4(position) * rotation_matrix(Matrix4, rotation);
-	view = inverse(transform);
+
+    view = inverse(transform);
+
 	aspect_ratio := window_width / cast(float)window_height;
 	projection = make_projection_matrix(radians(fov), aspect_ratio, 1.0, 1000.0);
 }

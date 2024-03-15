@@ -26,10 +26,10 @@ Frustum :: struct {
 }
 
 // @TODO: Make a better spatial query, something like a bounding sphere test on its furthest extent to make sure that it's completely out.
-point_is_inside_frustum :: (frustum : Frustum, point: Vector3) -> bool {
+entity_is_inside_frustum :: (frustum : Frustum, entity : Entity) -> bool {
     for frustum.planes {
-        distance := plane_dot(it, point);
-        if distance < 0 {
+        distance := plane_dot(it, entity.position);
+        if distance < 0 && abs(distance) > entity.bounding_radius {
             return false;
         }
     }

@@ -65,3 +65,33 @@ intersection :: (ray : Ray, box : Box) -> bool, t: float {
 
     return true, tmin;
 }
+
+/*
+Plane :: struct {
+    known_point : Vector3;
+    normal : Vector3;
+}
+
+is_on_plane :: (point : Vector3, plane : Plane) -> bool {
+    return 0 == dot(plane.normal, point - plane.known_point);
+}
+
+intersection :: (ray : Ray, plane : Plane) -> bool, t: float {
+    d_dot_n := dot(ray.direction, plane.normal);
+    if d_dot_n == 0 then return false, -1; // perpendicular to the normal. never intersects.
+
+    t := dot(plane.known_point - ray.origin, plane.normal) / d_dot_n;
+    return t >= 0, t;
+}
+
+test_intersection :: () {
+    ray := Ray.{.{250, 300, 0}, .{0, -1, 0}};
+
+    plane := Plane.{.{}, .{1, 1, 0}};
+
+    collided, t := intersection(ray, plane);
+    print("%, %\n", collided, t);
+}
+
+#run test_intersection();
+*/

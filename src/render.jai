@@ -3,19 +3,16 @@
 // Alex Hartford
 // June 2023
 
-shadow_debug : bool;
-
 render :: (entities : [..] *Entity) {
+    next_bind_id = 0;
 
     {
         // Shadow pass, drawing to the depth buffer.
         start_drawing_to_depth_buffer(shadow_map.depth_buffer);
 
-        glCullFace(GL_FRONT);
         render_scene_to_depth_buffer(entities);
-        glCullFace(GL_BACK);
 
-        if shadow_debug {
+        if settings.shadow_debug {
             draw_buffer_to_the_screen(shadow_map.depth_buffer.buffer);
             return;
         }
@@ -25,16 +22,21 @@ render :: (entities : [..] *Entity) {
         // Render Scene to the framebuffer.
         start_drawing_to_framebuffer(framebuffer);
 
+        if settings.line_mode
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
         render_scene(entities);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         draw_buffer_to_the_screen(framebuffer.color_buffer);
     }
 
     {
+        // Draw Text
         glDisable(GL_DEPTH_TEST);
         defer glEnable(GL_DEPTH_TEST);
 
-        // Draw Text
         shader := use_text_shader();
         defer disable_shaders();
 
@@ -44,7 +46,7 @@ render :: (entities : [..] *Entity) {
         }
     }
 
-    check_gl_error();
+    print_gl_errors();
 }
 
 render_scene :: (entities : [..] *Entity) {
@@ -57,7 +59,7 @@ render_scene :: (entities : [..] *Entity) {
 
         entities_drawn := 0;
         for entities {
-            if !point_is_inside_frustum(view_frustum, it.position) {
+            if !entity_is_inside_frustum(view_frustum, it) {
                 continue;
             }
 
@@ -65,8 +67,30 @@ render_scene :: (entities : [..] *Entity) {
             entities_drawn += 1;
         }
 
+        set_int(shader, "animated", 0);
+
         screen_print(tprint("Drawn: %\n", entities_drawn));
     }
+
+    {
+        // Draw highlighted things
+        shader := use_highlight_shader();
+        defer disable_shaders();
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        defer glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        if editor.selected_entity != -1 {
+            draw_entity(entities[editor.selected_entity], shader);
+        }
+
+        if settings.draw_bounding_boxes {
+            for entities {
+                draw_bounding_box(it, shader);
+            }
+        }
+    }
+
 
     {
         // Draw Plane
@@ -106,28 +130,4 @@ render_scene_to_depth_buffer :: (entities : [..] *Entity) {
 
         draw_ground_plane(20, shader);
     }
-}
-
-//
-//
-
-//GL_BIG_DATA_UNIFORM_BINDING :: 0;
-//g_big_data_ubo : GLuint;
-
-draw_skinned_mesh :: (using mesh : Skinned_Mesh, skinning_matrices : []Matrix4)
-{
-	assert(skinning_matrices.count <= MAX_JOINTS, "Skinning matrices array cannot have more than % elements for now.");
-
-	// Fill the uniform buffer with the skinning data
-	glBindVertexArray(vao);
-    /*
-	glBindBuffer(GL_UNIFORM_BUFFER, g_big_data_ubo);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * skinning_matrices.count, skinning_matrices.data);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    */
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-
-	glDrawElements(GL_TRIANGLES, cast(u32)indices.count, GL_UNSIGNED_INT, null);
 }
