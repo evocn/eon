@@ -46,7 +46,7 @@ use_highlight_shader :: () -> Shader {
     set_mat4(shader, "projection", camera.projection);
     set_mat4(shader, "view", camera.view);
 
-    oscillating := 1.0 - sin(cast(float32)get_time() * 5);
+    oscillating := 1.0 - sin(cast(float32)seconds_since_init() * 5);
     set_float(shader, "highlight", oscillating);
 
     return shader;
@@ -144,7 +144,7 @@ create_shader_program :: (vertex_source: string, fragment_source: string) -> GLu
 		{
 			info_len : s32;
 			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, *info_len);
-			info_data := cast(*u8)alloc(info_len, temp);
+			info_data := cast(*u8)alloc(info_len,, temp);
 			glGetShaderInfoLog(shader, xx info_len, xx *info_len, info_data);
 			result : string;
 			result.data = info_data;
@@ -164,7 +164,7 @@ create_shader_program :: (vertex_source: string, fragment_source: string) -> GLu
 		{
 			info_len : s32;
 			glGetProgramiv(program, GL_INFO_LOG_LENGTH, *info_len);
-			info_data := cast(*u8)alloc(info_len, temp);
+			info_data := cast(*u8)alloc(info_len,, temp);
 			glGetProgramInfoLog(program, xx info_len, xx *info_len, info_data);
 			result : string;
 			result.data = info_data;

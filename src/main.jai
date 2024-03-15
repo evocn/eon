@@ -118,7 +118,7 @@ main :: () {
     while running {
         reset_temporary_storage();
         array_reset(*debug.lines);
-        current_time := cast(float32)get_time();
+        current_time := cast(float32)seconds_since_init();
         delta_time = current_time - last_frame;
         last_frame = current_time;
 
@@ -201,3 +201,51 @@ using Basic :: #import "Basic"()(MEMORY_DEBUGGER=DEBUG_MEMORY);
 #import "SDL";
 #import "GL";
 ImGui :: #import "ImGui";
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+#load "utils.jai";
+#load "init.jai";
+#load "imgui_init.jai";
+#load "input.jai";
+#load "camera.jai";
+#load "collision.jai";
+       
+#load "program_mode.jai";
+       
+#load "editor.jai";
+#load "undo.jai";
+#load "gizmos.jai";
+       
+#load "debug.jai";
+       
+       
+#load "entity.jai";
+#load "serialization.jai";
+       
+       
+#load "simulate.jai";
+#load "body.jai";
+       
+       
+#load "render.jai";
+#load "primitives.jai";
+#load "parse_utils.jai";
+#load "mesh.jai";
+#load "animation.jai";
+       
+#load "color.jai";
+#load "light.jai";
+#load "frustum.jai";
+       
+#load "shader.jai";
+#load "texture.jai";
+#load "framebuffer.jai";
+#load "depthbuffer.jai";
+       
+#load "skybox.jai";
+#load "shadow.jai";
+#load "water.jai";
+       
+#load "font.jai";

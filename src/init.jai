@@ -5,7 +5,7 @@
 
 init :: () -> bool {
     log("Initializing...\n");
-    start_time := cast(float32)get_time();
+    start_time := cast(float32)seconds_since_init();
 
     {
         // SDL
@@ -151,7 +151,7 @@ init :: () -> bool {
         switch_mode(program_state.mode);
     }
 
-    end_time := cast(float32)get_time();
+    end_time := cast(float32)seconds_since_init();
 
     log("Done! (took % seconds)\n", end_time - start_time);
 

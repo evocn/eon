@@ -187,7 +187,7 @@ load_gltf :: (full_path : string) -> Mesh, bool {
                 }
 
                 node := data.nodes[joint_id];
-                table_add(*mesh.skeleton.name_to_joint_id, copy_string(node.name, allocator=a), joint.id);
+                table_add(*mesh.skeleton.name_to_joint_id, copy_string(node.name,, a), joint.id);
 
                 parent_id := node.parent;
 

@@ -183,7 +183,7 @@ get_next_entity :: (handler : *Text_File_Handler) -> entity: *Entity, success: b
 
     if kind == {
         case;
-            entity := New(Entity, allocator=a);
+            entity := New(Entity,, a);
             success := unserialize_structure(entity, handler);
             if !success {
                 log_error("Unable to unserialize Unit type in file %.\n");
@@ -232,7 +232,7 @@ unserialize  :: (to_unserialize: *string, handler : *Text_File_Handler) -> succe
         a.proc = flat_pool_allocator_proc;
         a.data = *entity_pool;
 
-        to_unserialize.* = copy_string(str, allocator=a);
+        to_unserialize.* = copy_string(str,, a);
     }
     return success;
 }
