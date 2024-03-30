@@ -69,7 +69,7 @@ render_scene :: (entities : [..] *Entity) {
 
         set_int(shader, "animated", 0);
 
-        screen_print(tprint("Drawn: %\n", entities_drawn));
+        screen_print(tprint("Drawn: %", entities_drawn));
     }
 
     {

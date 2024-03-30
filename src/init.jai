@@ -7,6 +7,10 @@ init :: () -> bool {
     log("Initializing...\n");
     start_time := cast(float32)seconds_since_init();
 
+    // Set the working directory to the base of the project so we can access our folders nicely.
+    executable_path := path_strip_filename(get_path_of_running_executable());
+    set_working_directory (tprint("%/../", executable_path));
+
     {
         // SDL
         SDL_Init(SDL_INIT_VIDEO);
@@ -55,6 +59,12 @@ init :: () -> bool {
         imgui_context = ImGui.CreateContext();
         ImGui_ImplSdl_Init(window);
 
+        io := ImGui.GetIO();
+        io.Fonts.AddFontFromFileTTF(io.Fonts, "assets/fonts/verdanab.ttf", window_height / 40.0, null, io.Fonts.GetGlyphRangesDefault(io.Fonts));
+
+        // Default location
+        io.IniFilename = "bin/imgui.ini";
+
         ImGui.StyleColorsClassic();
         //ImGui.StyleColorsLight();
     }
@@ -62,10 +72,6 @@ init :: () -> bool {
 
     {
         // My Program's Stuff
-
-        // Set the working directory to the base of the project so we can access our folders nicely.
-        executable_path := path_strip_filename(get_path_of_running_executable());
-        set_working_directory (tprint("%/../", executable_path));
 
         // Shaders
         render_context.basic_shader     = make_shader("basic.vs", "basic.fs");
@@ -116,7 +122,7 @@ init :: () -> bool {
             a.data = *forever_pool;
 
             fonts.allocator = a;
-            table_add(*fonts, "Header", make_font("JosefinSans-Regular.ttf", xx (window_height / 40)));
+            table_add(*fonts, "Header", make_font("verdanab.ttf", xx (window_height / 40)));
 
             // Textures
             textures.allocator = a;
@@ -124,7 +130,7 @@ init :: () -> bool {
         }
 
         // Rendering Structures
-        load_cubemap_textures(*render_context.skybox, "512_cartoon_green");
+        load_cubemap_textures(*render_context.skybox, "black");
 
         init_rendering_objects(*shadow_map);
         init_rendering_objects(*framebuffer);

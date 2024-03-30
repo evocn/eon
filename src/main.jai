@@ -9,11 +9,11 @@ window : *SDL_Window;
 gl_context : *SDL_GLContext;
 imgui_context : *ImGui.ImGuiContext;
 
-default_window_width  :: 1920;
-default_window_height :: 1080;
+default_window_width  :: 2560;
+default_window_height :: 1440;
 
-default_framebuffer_width  :: 1920;
-default_framebuffer_height :: 1080;
+default_framebuffer_width  :: 2560;
+default_framebuffer_height :: 1440;
 
 window_width  := default_window_width;
 window_height := default_window_height;
@@ -92,8 +92,9 @@ render_context : struct {
     skybox : Skybox;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
 // Main
-//
 
 pose : Skeleton_Pose;
 anim : Sampled_Animation;
@@ -211,41 +212,38 @@ ImGui :: #import "ImGui";
 #load "input.jai";
 #load "camera.jai";
 #load "collision.jai";
-       
+
 #load "program_mode.jai";
-       
+
 #load "editor.jai";
 #load "undo.jai";
 #load "gizmos.jai";
-       
+
 #load "debug.jai";
-       
-       
+
 #load "entity.jai";
 #load "serialization.jai";
-       
-       
+
 #load "simulate.jai";
 #load "body.jai";
-       
-       
+
 #load "render.jai";
 #load "primitives.jai";
 #load "parse_utils.jai";
 #load "mesh.jai";
 #load "animation.jai";
-       
+
 #load "color.jai";
 #load "light.jai";
 #load "frustum.jai";
-       
+
 #load "shader.jai";
 #load "texture.jai";
 #load "framebuffer.jai";
 #load "depthbuffer.jai";
-       
+
 #load "skybox.jai";
 #load "shadow.jai";
 #load "water.jai";
-       
+
 #load "font.jai";
