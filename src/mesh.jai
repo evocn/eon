@@ -237,7 +237,21 @@ load_gltf :: (full_path : string, $debug := false) -> Mesh, bool {
                 sampled_animation : Joint_Animation;
 
                 for channel : gltf_animation.channels {
+                    if channel.target.property == {
+                        case .TRANSLATION;
+                        case .ROTATION;
+                        case .SCALE;
+                    }
+                    // Get the stuff out of the sampler which this channel is looking at
+                    {
+                        sampler := gltf_animation.samplers[channel.sampler];
 
+                        timestamps: [..] float;
+                        outputs:    [..] float;
+
+                        read_buffer_from_accessor(*data, data.accessors[sampler.input], *timestamps);
+                        read_buffer_from_accessor(*data, data.accessors[sampler.output], *outputs);
+                    }
                 }
             }
         }

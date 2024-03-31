@@ -2,7 +2,7 @@
 // Animation
 // Alex Hartford
 // March 2024
-// From the skeletal_animation example in the jai beta.
+// Derived partially from the skeletal_animation example in the jai beta.
 
 Joint_Sample :: struct
 {
@@ -14,13 +14,9 @@ Joint_Sample :: struct
 Joint_Animation :: struct
 {
 	name : string;
-	samples : []Joint_Sample;
+	samples : [] Joint_Sample;
 }
 
-// The way we store animation data is very bad for cache.
-// It would probably be better to have all the joint samples
-// for each **pose** in the animation be contiguous, but we have
-// all the joint samples for each **joint** contiguous.
 Sampled_Animation :: struct
 {
 	sample_count : s64;
@@ -50,8 +46,8 @@ load_animation_from_file :: (anim : *Sampled_Animation, filename : string) -> bo
 		line, ok := consume_next_line (handler);
 		if !ok
 			return error_out (handler, "Could not parse joint name.");
-		// We don't make sure the name does not exist already
-		// first, but let's keep this simple.
+
+        // @TODO: Make sure the name doesn't already exist!
 		joint.name = copy_string (line);
 		joint.samples.data = data;
 		joint.samples.count = anim.sample_count;
@@ -143,8 +139,7 @@ free_pose :: (pose : *Skeleton_Pose)
 
 reset_to_bind_pose :: (using pose : *Skeleton_Pose)
 {
-	for * joints
-	{
+	for * joints {
 		it.local_position, it.local_orientation, it.local_scale = decompose_transform(skeleton.joints[it_index].local_bind_transform);
 	}
 }
@@ -208,22 +203,13 @@ interpolate_joint_samples :: inline (a : Joint_Sample, b : Joint_Sample, t : flo
 	return result;
 }
 
-// Sample an animation into `pose', at a given time. Our implementation
-// and data layout is not very cache friendly because it reads data in a
-// lot of different places, but for this example this is fine.
-// What we do is that the samples for a joint J are all contiguous,
-// but the best thing to do would probably be to have all joint samples
-// for a pose P be contiguous, and we'd iterate over all the joints in
-// the first pose, then the second pose to interpolate them.
+// Sample an animation into `pose', at a given time.
 sample_animation :: (using anim : Sampled_Animation, time_in_samples : float, pose : *Skeleton_Pose, 
                      interpolation_mode := Interpolation_Mode.LINEAR)
 {
 	time_in_samples = fmod_cycling(time_in_samples, cast (float) sample_count);
 	for joint : joints
 	{
-		// Ideally we would be caching the results of all these
-		// hash table lookups in a flat array, but for simplicity
-		// we don't do it.
 		joint_index, ok := table_find(*pose.skeleton.name_to_joint_id, joint.name);
 		if !ok
 			continue;
