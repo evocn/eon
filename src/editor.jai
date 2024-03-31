@@ -3,7 +3,7 @@
 // Alex Hartford
 // June 2023
 
-update_and_draw_editor :: (entities : *[..] *Entity) {
+update_and_draw_editor :: (game: *Game) {
     io := ImGui.GetIO();
     program_state.imgui_capturing_mouse    = io.WantCaptureMouse;
     program_state.imgui_capturing_keyboard = io.WantCaptureKeyboard;
@@ -11,17 +11,16 @@ update_and_draw_editor :: (entities : *[..] *Entity) {
 
     if !program_state.imgui_capturing_mouse {
         if program_state.mode == .EDITOR {
-            maybe_select_entity(entities.*);
+            maybe_select_entity(game.entities);
         }
     }
 
-    //
-    //
+    ////////////////////////////////////////////////////////////////////////////////
 
     ImGui_ImplSdl_NewFrame(window);
     ImGui.NewFrame();
 
-    draw_all_windows(entities);
+    draw_all_windows(game);
 
     using ImGui.MouseCursor;
     if ImGui.GetMouseCursor() == {
@@ -37,10 +36,10 @@ update_and_draw_editor :: (entities : *[..] *Entity) {
     ImGui.Render();
 }
 
-draw_all_windows :: (entities : *[..] *Entity) {
-    entities_window(entities);
+draw_all_windows :: (game: *Game) {
+    entities_window(*game.entities);
     if editor.selected_entity != -1 {
-        entity_window(entities.*[editor.selected_entity], entities);
+        entity_window(game.entities[editor.selected_entity], *game.entities);
     }
 
     settings_window();
@@ -50,6 +49,16 @@ draw_all_windows :: (entities : *[..] *Entity) {
     undo_redo_window();
 
     shadow_frustum_window();
+
+    camera_window();
+}
+
+camera_window :: () {
+    ImGui.Begin("Cameras");
+    {
+        ImGui.Text("%", program_state.camera.kind);
+    }
+    ImGui.End();
 }
 
 theta : float;
@@ -69,11 +78,17 @@ entity_window :: (using entity: *Entity, entities : *[..] *Entity) {
         if ImGui.Button("delete") {
             delete_entity(entities, editor.selected_entity);
             editor.selected_entity = -1;
+            // @TODO: These should put the delete commands on a queue which is executed on frame cleanup.
+            ImGui.End();
+            return;
         }
         ImGui.SameLine();
         if ImGui.Button("copy") {
             duplicate_entity(entities, editor.selected_entity);
             editor.selected_entity += 1;
+            // @TODO: These should put the copy commands on a queue which is executed on frame cleanup.
+            ImGui.End();
+            return;
         }
 
         for mesh_catalogue {
@@ -158,10 +173,10 @@ shadow_frustum_window :: () {
 }
 
 orthographic_frustum_editor :: (frustum : *Orthographic_Frustum) {
-    ImGui.SliderFloat("Near", *frustum.near, -50.0, 50.0);
-    ImGui.SliderFloat("Far",  *frustum.far, -50.0, 50.0);
-    ImGui.SliderFloat("Width",  *frustum.width, -50.0, 50.0);
-    ImGui.SliderFloat("Height",  *frustum.height, -50.0, 50.0);
+    ImGui.SliderFloat("Near", *frustum.near, -10.0, 100.0);
+    ImGui.SliderFloat("Far",  *frustum.far, -10.0, 100.0);
+    ImGui.SliderFloat("Width",  *frustum.width, 0.0, 100.0);
+    ImGui.SliderFloat("Height",  *frustum.height, 0.0, 100.0);
 }
 
 //

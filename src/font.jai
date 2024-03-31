@@ -16,14 +16,13 @@ make_font :: (filename: string, size: u32) -> Font {
 }
 
 draw_text :: (shader: Shader, font: Font, text: string, 
-              x: float, y: float, scale := 1.0, color := Vector4.{0, 0, 0, 1})
+              x: float, y: float, scale := 1.0, color := white)
 {
     set_vec4(shader, "color", color);
     render_text(font, text, x, y, scale);
 }
 
-//
-//
+////////////////////////////////////////////////////////////////////////////////
 
 #scope_file
 

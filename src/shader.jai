@@ -17,8 +17,8 @@ use_basic_shader :: () -> Shader {
     shader := render_context.basic_shader;
     use_shader(shader);
 
-    set_mat4(shader, "projection", camera.projection);
-    set_mat4(shader, "view", camera.view);
+    set_mat4(shader, "projection", program_state.camera.projection);
+    set_mat4(shader, "view", program_state.camera.view);
 
     return shader;
 }
@@ -27,8 +27,8 @@ use_main_shader :: () -> Shader {
     shader := render_context.main_shader;
     use_shader(shader);
 
-    set_mat4(shader, "projection", camera.projection);
-    set_mat4(shader, "view", camera.view);
+    set_mat4(shader, "projection", program_state.camera.projection);
+    set_mat4(shader, "view", program_state.camera.view);
 
     light_space_matrix := get_shadow_map_projection_matrix(shadow_map) * get_shadow_map_view_matrix(shadow_map);
     set_mat4(shader, "light_space_matrix", light_space_matrix);
@@ -43,8 +43,8 @@ use_highlight_shader :: () -> Shader {
     shader := render_context.highlight_shader;
     use_shader(shader);
 
-    set_mat4(shader, "projection", camera.projection);
-    set_mat4(shader, "view", camera.view);
+    set_mat4(shader, "projection", program_state.camera.projection);
+    set_mat4(shader, "view", program_state.camera.view);
 
     oscillating := 1.0 - sin(cast(float32)seconds_since_init() * 5);
     set_float(shader, "highlight", oscillating);
@@ -66,8 +66,8 @@ use_skybox_shader :: () -> Shader {
     shader := render_context.skybox_shader;
     use_shader(shader);
 
-    set_mat4(shader, "projection", camera.projection);
-    view_matrix_without_translation := make_matrix4(make_matrix3(camera.view));
+    set_mat4(shader, "projection", program_state.camera.projection);
+    view_matrix_without_translation := make_matrix4(make_matrix3(program_state.camera.view));
     set_mat4(shader, "view", view_matrix_without_translation);
     set_mat4(shader, "model", Matrix4_Identity);
 

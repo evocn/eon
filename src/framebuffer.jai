@@ -24,9 +24,9 @@ start_drawing_to_screen :: () {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-draw_buffer_to_the_screen :: (buffer : GLuint) {
+draw_buffer_to_the_screen :: (buffer : GLuint, x: s32, y: s32, width: u32, height: u32) {
     start_drawing_to_screen();
-    glViewport(0, 0, cast(u32)window_width, cast(u32)window_height);
+    glViewport(x, y, width, height);
 
     glDisable(GL_DEPTH_TEST);
     defer glEnable(GL_DEPTH_TEST);

@@ -3,19 +3,51 @@
 // Alex Hartford
 // June 2023
 
-// This is simply a list of all the colors we will use in the game.
-// My plan is just to keep this as the end-all-be-all mapping, and always draw in these colors.
-// This will require a bit of doing on our part, but not much, and will be
-// great for easily tweaking the final result.
+Color :: Vector4;
 
-// @NOTE: Just leave the alphas in here as 1... We want to set the alpha we want at the use point.
-// The only reason these aren't Vector3's is because it's nicer to pass vector4's around later.
+// Assumes a hex number in the form 0xRRGGBB (no Alpha)
+color_from_hex :: ($h: u32) -> Color {
+    color : Color;
+    color.x = ((h >> 16) & 0xff) / 255.0;
+    color.y = ((h >>  8) & 0xff) / 255.0;
+    color.z = ((h >>  0) & 0xff) / 255.0;
+    color.w = 1.0;
 
-white  :: Vector4.{.97, 1, .97, 1};
-black  :: Vector4.{.16, .18, .21, 1};
-red    :: Vector4.{0.9, .2, .2, 1};
-green  :: Vector4.{0, .98, .61, 1};
-blue   :: Vector4.{.31, .80, .77, 1};
+    return color;
+}
 
-orange :: Vector4.{1, .3, .2,  1};
-yellow :: Vector4.{1, .9, .43, 1};
+// The Palette
+////////////////////////////////////////////////////////////////////////////////
+
+color_none :: Color.{};
+white   :: #run color_from_hex(0xffffff);
+black   :: #run color_from_hex(0x060608);
+gray    :: #run color_from_hex(0x7c7c7c);
+
+purple  :: #run color_from_hex(0x2f256b);
+red     :: #run color_from_hex(0xd14444);
+green   :: #run color_from_hex(0x67ab7a);
+yellow  :: #run color_from_hex(0xECA72C);
+blue    :: #run color_from_hex(0x067ab7);
+pink    :: #run color_from_hex(0xb869d3);
+
+// Rainbow color below!
+////////////////////////////////////////////////////////////////////////////////
+
+rainbow : Color;
+
+rainbow_time : float;
+RAINBOW_OSCILLATION_SPEED :: 5.0;
+
+update_rainbow_color :: (dt: float) -> Color {
+    rainbow_time += dt * RAINBOW_OSCILLATION_SPEED;
+
+    if rainbow_time >= 6.0 then rainbow_time = rainbow_time - 6.0;
+    
+    if      rainbow_time > 5.0 then return pink;
+    else if rainbow_time > 4.0 then return red;
+    else if rainbow_time > 3.0 then return yellow;
+    else if rainbow_time > 2.0 then return green;
+    else if rainbow_time > 1.0 then return blue;
+    else                            return purple;
+}

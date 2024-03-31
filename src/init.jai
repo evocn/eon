@@ -69,9 +69,9 @@ init :: () -> bool {
         //ImGui.StyleColorsLight();
     }
 
-
+    ////////////////////////////////////////////////////////////////////////////////
+    // My Program's Stuff
     {
-        // My Program's Stuff
 
         // Shaders
         render_context.basic_shader     = make_shader("basic.vs", "basic.fs");
@@ -100,15 +100,22 @@ init :: () -> bool {
 
             mesh_catalogue.allocator = a;
 
-            new_mesh :: (name : string) {
-                mesh := create_mesh_from_gltf(tprint("%.glb", name));
+            new_mesh :: (name : string, $debug := false) {
+                if debug {
+                    print("\nLoading mesh from file with the name %\n\n", name);
+                }
+
+                mesh := create_mesh_from_gltf(tprint("%.glb", name), debug);
                 locator, pointer := bucket_array_add(*mesh_storage, mesh);
                 table_add(*mesh_catalogue, name, pointer);
             }
 
-            new_mesh("cube");
+            //new_mesh("guy", debug = true);
+            //new_mesh("cube");
             //new_mesh("finch");
-            new_mesh("bird");
+            //new_mesh("bird", debug=true);
+            new_mesh("CubeTest", debug=true);
+            //new_mesh("CharacterTest");
         }
 
         // Primitives
@@ -145,16 +152,12 @@ init :: () -> bool {
         animation_time = 0.0;
         animation_speed_in_fps = 20.0;
 
-        bird_mesh:, success = table_find(*mesh_catalogue, "bird");
+        mesh:, success = table_find(*mesh_catalogue, "CubeTest");
         if !success {
-            log_error("Bird not found.\n");
+            log_error("CubeTest not found.\n");
         }
 
-        pose = make_pose_for_skeleton(*bird_mesh.skeleton);
-
-
-        set_camera();
-        switch_mode(program_state.mode);
+        pose = make_pose_for_skeleton(*mesh.skeleton);
     }
 
     end_time := cast(float32)seconds_since_init();

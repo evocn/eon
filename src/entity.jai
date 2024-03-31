@@ -10,7 +10,7 @@ Entity :: struct {
     flags : Entity_Flags;
 
     using transform : Transform;
-    using body : Character_Body; @NoSerialize
+    using controller: Character_Controller; @NoSerialize
 
     mesh_name : string;
 
@@ -28,27 +28,24 @@ Entity_Flags :: enum_flags {
 }
 
 update :: (using entity : *Entity, delta_time : float) {
-    update_transforms_with_input(entity, delta_time);
+    //update_transforms_with_input(entity, delta_time);
 }
 
-//
-//
+////////////////////////////////////////////////////////////////////////////////
 
-// @TODO: Get Orientation right with this.
 calculate_bounding_box :: (using entity : Entity) -> Box {
-    low_extent, high_extent := find_extents(mesh);
-    return Box.{position + rotate(low_extent, orientation) * scale, position + rotate(high_extent, orientation) * scale};
+    low_extent, high_extent := find_extents(mesh, transform);
+    return Box.{low_extent, high_extent};
 }
 
-//
-//
+////////////////////////////////////////////////////////////////////////////////
 
 draw_entity :: (using entity : Entity, shader : Shader) {
     if mesh {
         bind_id := bind_texture(mesh.texture.id);
         set_int(shader, "diffuse_texture", bind_id);
 
-        set_vec4(shader, "color_override", .{});
+        set_vec4(shader, "color_override", green);
 
         scale_mat   := make_scale_matrix4(Vector3.{scale, scale, scale});
         rotation    := rotation_matrix(Matrix4, orientation);
@@ -56,7 +53,9 @@ draw_entity :: (using entity : Entity, shader : Shader) {
         model := translation * rotation * scale_mat;
         set_mat4(shader, "model", model);
 
-        if mesh_name == "bird" {
+        //if mesh_name == "test" {
+        //if mesh_name == "bird" {
+        if false {
             bind_skinning_matrices(pose.skinning_matrices, shader);
             set_int(shader, "animated", 1);
         }
@@ -79,7 +78,7 @@ draw_bounding_box :: (using entity : Entity, shader : Shader) {
     box_center   := Vector3.{box.max.x + box.min.x, box.max.y + box.min.y, box.max.z + box.min.z} / 2.0;
 
     scale_mat    := make_scale_matrix4(scale_vector);
-    rotation     := rotation_matrix(Matrix4, orientation);
+    rotation     := Matrix4_Identity;
     translation  := make_translation_matrix4(box_center);
     model := translation * rotation * scale_mat;
     set_mat4(shader, "model", model);
@@ -87,8 +86,7 @@ draw_bounding_box :: (using entity : Entity, shader : Shader) {
     draw_cube();
 }
 
-//
-//
+////////////////////////////////////////////////////////////////////////////////
 
 find_entity_mesh :: (using entity: *Entity) {
     found_mesh : bool;

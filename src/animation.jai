@@ -1,7 +1,7 @@
 // Everett
 // Animation
 // Alex Hartford
-// June 2023
+// March 2024
 // From the skeletal_animation example in the jai beta.
 
 Joint_Sample :: struct
@@ -24,7 +24,7 @@ Joint_Animation :: struct
 Sampled_Animation :: struct
 {
 	sample_count : s64;
-	joints : []Joint_Animation;
+	joints : [] Joint_Animation;
 }
 
 Skeleton_Pose :: struct
