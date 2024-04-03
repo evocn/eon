@@ -40,34 +40,45 @@ calculate_bounding_box :: (using entity : Entity) -> Box {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-draw_entity :: (using entity : Entity, shader : Shader) {
-    if mesh {
-        bind_id := bind_texture(mesh.texture.id);
+draw_entity :: (entity : Entity, shader : Shader) {
+    if entity.mesh {
+        bind_id := bind_texture(entity.mesh.texture.id);
         set_int(shader, "diffuse_texture", bind_id);
 
-        set_vec4(shader, "color_override", green);
+        set_vec4(shader, "color_override", blue);
 
-        scale_mat   := make_scale_matrix4(Vector3.{scale, scale, scale});
-        rotation    := rotation_matrix(Matrix4, orientation);
-        translation := make_translation_matrix4(position);
+        scale_mat   := make_scale_matrix4(Vector3.{entity.scale, entity.scale, entity.scale});
+        rotation    := rotation_matrix(Matrix4, entity.orientation);
+        translation := make_translation_matrix4(entity.position);
         model := translation * rotation * scale_mat;
         set_mat4(shader, "model", model);
 
-        //if mesh_name == "test" {
-        //if mesh_name == "bird" {
         if false {
-            bind_skinning_matrices(pose.skinning_matrices, shader);
+            assert (pose.skinning_matrices.count <= MAX_JOINTS, "Skinning matrices array cannot have more than % elements for now.");
+
+            // @TODO: This is currently copying over all the matrices because of the stupid fucking transposition thing.
+            // We should probably just transpose when we generate these, or whatever.
+            new_skinning_matrices := NewArray(pose.skinning_matrices.count, Matrix4);
+            for pose.skinning_matrices {
+                new_skinning_matrices[it_index] = transpose(it);
+                //new_skinning_matrices[it_index] = it;
+            }
+
+            // Fill the uniform buffer with the skinning data
+            glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * new_skinning_matrices.count, new_skinning_matrices.data);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
             set_int(shader, "animated", 1);
         }
         else {
-            bind_skinning_matrices(.[], shader);
             set_int(shader, "animated", 0);
         }
 
-        draw_mesh(mesh);
+        draw_mesh(entity.mesh);
     }
     else {
-        log_error("Trying to draw entity % which has no mesh!\n", name);
+        log_error("Trying to draw entity % which has no mesh!\n", entity.name);
     }
 }
 

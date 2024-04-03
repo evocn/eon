@@ -6,6 +6,6 @@ test	# name
 0	# flags
 0 0 0	# position
 0 0 0 1	# orientation
-100	# scale
-CubeTest	# mesh_name
+0.05	# scale
+guy	# mesh_name
 10	# bounding_radius

@@ -127,6 +127,16 @@ parse_float_tuple :: (handler : *Text_File_Handler, $count : int) -> [count]floa
 	return result, true;
 }
 
+parse_vector2 :: (handler : *Text_File_Handler) -> Vector2, bool
+{
+	components, ok := parse_float_tuple (handler, 2);
+	if !ok
+		return .{}, false;
+	result : Vector2 = ---;
+	result.component = components;
+	return result, true;
+}
+
 parse_vector3 :: (handler : *Text_File_Handler) -> Vector3, bool
 {
 	components, ok := parse_float_tuple (handler, 3);

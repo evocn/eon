@@ -11,7 +11,11 @@ render :: (game: Game) {
     {
         start_drawing_to_depth_buffer(shadow_map.depth_buffer);
 
+        glCullFace(GL_FRONT);
+        glEnable(GL_CULL_FACE);
         render_scene_to_depth_buffer(game);
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -19,6 +23,8 @@ render :: (game: Game) {
     {
         start_drawing_to_framebuffer(framebuffer);
         {
+            draw_grid();
+
             if settings.line_mode
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -65,22 +71,26 @@ render :: (game: Game) {
 render_scene :: (game: Game) {
     view_frustum := calculate_view_frustum(program_state.camera.projection, program_state.camera.view);
 
+    light_direction := Vector3.{-1, 1, -1};
+
     {
         // Draw Entities
         shader := use_main_shader();
         defer disable_shaders();
 
+        set_vec3(shader, "light_direction", light_direction);
+
         entities_drawn := 0;
         for entity : game.entities {
+            /*
             if !entity_is_inside_frustum(view_frustum, entity) {
                 continue;
             }
+            */
 
             draw_entity(entity, shader);
             entities_drawn += 1;
         }
-
-        set_int(shader, "animated", 0);
 
         screen_print(tprint("Drawn: %", entities_drawn));
     }
@@ -90,6 +100,9 @@ render_scene :: (game: Game) {
         shader := use_main_shader();
         defer disable_shaders();
 
+        set_vec3(shader, "light_direction", light_direction);
+
+        set_int(shader, "animated", 0);
         draw_ground_plane(100, shader);
     }
 
@@ -105,7 +118,6 @@ render_scene :: (game: Game) {
 
 
 render_scene_to_depth_buffer :: (game: Game) {
-
     {
         // Draw Entities
 
@@ -149,5 +161,80 @@ render_editor_overlays :: (game: Game) {
                 draw_bounding_box(entity, shader);
             }
         }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Taken from the skeletal animation sample in the jai beta
+
+draw_grid :: () {
+    // Draw coordinate axes
+    draw_line (.{}, .{x=1}, .{x=1, w=1});
+    draw_line (.{}, .{y=1}, .{y=1, w=1});
+    draw_line (.{}, .{z=1}, .{z=1, w=1});
+    // Draw grid
+    for i : -10..10
+        draw_line (xyz (xx i, 0, -10), xyz (xx i, 0, 10), .{0.4, 0.4, 0.4, 1});
+    for i : -10..10
+        draw_line (xyz (-10, 0, xx i), xyz (10, 0, xx i), .{0.4, 0.4, 0.4, 1});
+}
+
+draw_pose :: (using pose : Skeleton_Pose, transform : Matrix4, color : Vector4)
+{
+	for * joints
+	{
+		parent_transform : Matrix4 = ---;
+        parent := it.parent;
+		if parent
+		    parent_transform = transform * parent.model_space_transform;
+		else
+			parent_transform = transform;
+
+		world_space_transform := transform * it.model_space_transform;
+		start := xyz (
+			parent_transform._14,
+			parent_transform._24,
+			parent_transform._34
+		);
+		end := xyz (
+			world_space_transform._14,
+			world_space_transform._24,
+			world_space_transform._34
+		);
+		draw_line (start, end, color);
+	}
+}
+
+// Used for line rendering
+Vertex_Pos_Color :: struct
+{
+	position : Vector3;
+	color : Vector4;
+}
+
+draw_line :: inline (start : Vector3, end : Vector3, color : Vector4)
+{
+	draw_line (start, end, color, color);
+}
+
+// This is maybe the slowest way possible to draw a line!
+draw_line :: (start : Vector3, end : Vector3, start_color : Vector4, end_color : Vector4)
+{
+	data : [2]Vertex_Pos_Color = ---;
+	data[0].position = start;
+	data[0].color    = start_color;
+	data[1].position = end;
+	data[1].color    = end_color;
+
+	glBindVertexArray (g_line_vao);
+	glBindBuffer (GL_ARRAY_BUFFER, g_line_vbo);
+	// Fill the vertex buffer with our two line vertices
+	glBufferSubData (GL_ARRAY_BUFFER, 0, size_of (Vertex_Pos_Color) * 2, data.data);
+
+    shader := use_basic_shader();
+    {
+        model := Matrix4_Identity;
+        set_mat4(shader, "model", model);
+        glDrawArrays(GL_LINES, 0, 2);
     }
 }

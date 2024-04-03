@@ -2,7 +2,6 @@
 // Animation
 // Alex Hartford
 // March 2024
-// Derived partially from the skeletal_animation example in the jai beta.
 
 Joint_Sample :: struct
 {
@@ -140,7 +139,9 @@ free_pose :: (pose : *Skeleton_Pose)
 reset_to_bind_pose :: (using pose : *Skeleton_Pose)
 {
 	for * joints {
+        print("Local Bind Transform: %\n", skeleton.joints[it_index].local_bind_transform);
 		it.local_position, it.local_orientation, it.local_scale = decompose_transform(skeleton.joints[it_index].local_bind_transform);
+        print("Bind Pose Joint %: % % %\n", it_index, it.local_position, it.local_orientation, it.local_scale);
 	}
 }
 
@@ -207,7 +208,9 @@ interpolate_joint_samples :: inline (a : Joint_Sample, b : Joint_Sample, t : flo
 sample_animation :: (using anim : Sampled_Animation, time_in_samples : float, pose : *Skeleton_Pose, 
                      interpolation_mode := Interpolation_Mode.LINEAR)
 {
+    // Doing this outside of this function atm...
 	time_in_samples = fmod_cycling(time_in_samples, cast (float) sample_count);
+
 	for joint : joints
 	{
 		joint_index, ok := table_find(*pose.skeleton.name_to_joint_id, joint.name);
@@ -235,8 +238,7 @@ sample_animation :: (using anim : Sampled_Animation, time_in_samples : float, po
 // those transforms for other purposes (though we don't in this program).
 calculate_pose_transforms :: (using pose : *Skeleton_Pose)
 {
-	for * joints
-	{
+	for * joints {
 		local_transform := make_translation_matrix4(it.local_position)
 			* make_scale_matrix4(it.local_scale)
 			* rotation_matrix(Matrix4, it.local_orientation);
@@ -267,6 +269,6 @@ generate_skinning_matrices :: (using pose : *Skeleton_Pose, transpose_result : b
 	{
 		skinning_matrices[i] = joints[i].model_space_transform * skeleton.joints[i].inverse_bind_transform;
 		if transpose_result
-			transpose(*skinning_matrices[i]);
+			transpose (*skinning_matrices[i]);
 	}
 }

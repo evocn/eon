@@ -46,11 +46,15 @@ init :: () -> bool {
         // 2. Sort all the transparent objects by distance to the viewer.
         // 3. Draw all the transparent object in sorted order.
 
-        glEnable(GL_DEPTH_TEST); 
-        glDepthMask(GL_TRUE);
+        {
+            glEnable(GL_CULL_FACE);
 
-        glLineWidth(2);
-        glPointSize(5);
+            glEnable(GL_DEPTH_TEST); 
+            glDepthMask(GL_TRUE);
+
+            glLineWidth(10);
+            glPointSize(5);
+        }
     }
 
 
@@ -59,14 +63,16 @@ init :: () -> bool {
         imgui_context = ImGui.CreateContext();
         ImGui_ImplSdl_Init(window);
 
-        io := ImGui.GetIO();
-        io.Fonts.AddFontFromFileTTF(io.Fonts, "assets/fonts/verdanab.ttf", window_height / 40.0, null, io.Fonts.GetGlyphRangesDefault(io.Fonts));
+        {
+            io := ImGui.GetIO();
+            io.Fonts.AddFontFromFileTTF(io.Fonts, "assets/fonts/verdanab.ttf", window_height / 40.0, null, io.Fonts.GetGlyphRangesDefault(io.Fonts));
 
-        // Default location
-        io.IniFilename = "bin/imgui.ini";
+            // Default location
+            io.IniFilename = "bin/imgui.ini";
 
-        ImGui.StyleColorsClassic();
-        //ImGui.StyleColorsLight();
+            ImGui.StyleColorsClassic();
+            //ImGui.StyleColorsLight();
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -105,18 +111,23 @@ init :: () -> bool {
                     print("\nLoading mesh from file with the name %\n\n", name);
                 }
 
-                mesh := create_mesh_from_gltf(tprint("%.glb", name), debug);
+                mesh := create_mesh_from_night_mesh(tprint("%.night_mesh", name));
                 locator, pointer := bucket_array_add(*mesh_storage, mesh);
                 table_add(*mesh_catalogue, name, pointer);
             }
 
-            //new_mesh("guy", debug = true);
+            new_mesh("simple");
+            new_mesh("guy");
+            //new_mesh("test");
+            //new_mesh("bird";
             //new_mesh("cube");
             //new_mesh("finch");
-            //new_mesh("bird", debug=true);
-            new_mesh("CubeTest", debug=true);
+            //new_mesh("CubeTest");
             //new_mesh("CharacterTest");
         }
+
+        mesh, success := table_find(*mesh_catalogue, "simple");
+        assert(success);
 
         // Primitives
         init_quad_rendering_objects(*quad);
@@ -144,20 +155,20 @@ init :: () -> bool {
 
 
         // Animations
-        success := load_animation_from_file(*anim, "assets/animations/test.anim");
-        if !success {
-            log_error("Could not load % animation.", basename);
+        /*
+        {
+            success := load_animation_from_file(*anim, "assets/animations/test.anim");
+            assert(success);
+
+            animation_time = 0.0;
+            animation_speed_in_fps = 40.0;
+
+            mesh:, success = table_find(*mesh_catalogue, "test");
+            assert(success);
+
+            pose = make_pose_for_skeleton(*mesh.skeleton);
         }
-
-        animation_time = 0.0;
-        animation_speed_in_fps = 20.0;
-
-        mesh:, success = table_find(*mesh_catalogue, "CubeTest");
-        if !success {
-            log_error("CubeTest not found.\n");
-        }
-
-        pose = make_pose_for_skeleton(*mesh.skeleton);
+        */
     }
 
     end_time := cast(float32)seconds_since_init();

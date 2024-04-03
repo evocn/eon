@@ -89,14 +89,14 @@ disable_shaders :: () { glUseProgram(0); }
 
 make_shader :: (vertex_filename: string, fragment_filename: string) -> Shader
 {
-    vs_text, vertex_success := read_entire_file(tprint("%/%", shaders_path, vertex_filename), log_errors = false);
+    vs_text, vertex_success := read_entire_file(tprint("%/%.glsl", shaders_path, vertex_filename), log_errors = false);
     defer free(vs_text.data);
     if !vertex_success {
         log_error("Could not read vertex shader: %", vertex_filename);
         return 0;
     }
 
-    fs_text, fragment_success := read_entire_file(tprint("%/%", shaders_path, fragment_filename), log_errors = false);
+    fs_text, fragment_success := read_entire_file(tprint("%/%.glsl", shaders_path, fragment_filename), log_errors = false);
     defer free(fs_text.data);
     if !fragment_success {
         log_error("Could not read fragment shader: %", fragment_filename);

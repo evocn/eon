@@ -11,6 +11,7 @@
     * Model / Animation pipeline
     * Fix Culling Radius (just base it on bounding boxes! We're already generating these every damn frame... Always will work!)
     * Gameplay Prototype
+    * Line Thickness / Flickering
     * Moon / Sun thing for shadows to come from
 
     * Heightmaps and Terrain
@@ -137,6 +138,9 @@ render_context : struct {
 ////////////////////////////////////////////////////////////////////////////////
 // Main
 
+ubo : GLuint;
+g_line_vao, g_line_vbo : GLuint;
+
 pose : Skeleton_Pose;
 anim : Sampled_Animation;
 animation_time : float;
@@ -194,6 +198,45 @@ main :: () {
         assert(success);
     }
 
+    // Create uniform buffer object
+    {
+        // @TODO: This will be necessary if we want to pass more than one UBO.
+        /*
+        big_data_uniform_index := glGetUniformBlockIndex (g_mesh_shader, "Big_Data");
+        glUniformBlockBinding (g_mesh_shader, big_data_uniform_index, GL_BIG_DATA_UNIFORM_BINDING);
+        */
+
+        // Check if we can store enough data for the skinning information in a shader uniform block.
+        uniform_block_size : s32;
+        glGetIntegerv (GL_MAX_UNIFORM_BLOCK_SIZE, *uniform_block_size);
+        assert (uniform_block_size >= MAX_JOINTS * size_of (Matrix4),
+            "OpenGL implementation does not allow storing more than % bytes in uniform block, but we need at least % for skinning information. Recompile the program with a smaller MAX_JOINTS value.",
+            uniform_block_size, MAX_JOINTS * size_of(Matrix4));
+
+        glGenBuffers(1, *ubo);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+        glBufferData(GL_UNIFORM_BUFFER, size_of(Matrix4) * MAX_JOINTS, null, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
+    }
+
+    // Create line objects. We have a vertex buffer that we fill
+    // every time we want to draw a line.
+    {
+        glGenVertexArrays (1, *g_line_vao);
+        glBindVertexArray (g_line_vao);
+        glGenBuffers (1, *g_line_vbo);
+        glBindBuffer (GL_ARRAY_BUFFER, g_line_vbo);
+        glBufferData (GL_ARRAY_BUFFER, size_of (Vertex_Pos_Color) * 2, null, GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray (0);
+        glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, size_of (Vertex_Pos_Color), cast (*void) 0);
+        glEnableVertexAttribArray (1);
+        glVertexAttribPointer (1, 4, GL_FLOAT, GL_FALSE, size_of (Vertex_Pos_Color), cast (*void) size_of (Vector3));
+
+        glBindVertexArray (0);
+        glBindBuffer (GL_ARRAY_BUFFER, 0);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
     // The Loop
 
@@ -227,16 +270,19 @@ main :: () {
 
 ////////////////////////////////////////////////////////////////////////////////
         // Animation Stuff!!!!!!!!!!!!!!!
+        /*
+        if !program_state.paused {
             reset_to_bind_pose(*pose);
-
-            sample_animation(anim, animation_time, *pose, .LINEAR);
 
             // Increment animation time
             animation_time += delta_time * animation_speed_in_fps;
-            animation_time = fmod_cycling(animation_time, xx anim.sample_count);
 
-            // We transpose the result because OpenGL stores matrices in column-major
-            generate_skinning_matrices(*pose, transpose_result = true);
+            sample_animation(anim, 0.0, *pose, .LINEAR);
+
+            generate_skinning_matrices(*pose, transpose_result = false);
+        }
+        */
+
 ////////////////////////////////////////////////////////////////////////////////
 
         // Render

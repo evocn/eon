@@ -80,7 +80,7 @@ Camera_Flying :: struct {
     kind = .FLYING;
 
     MOVEMENT_SPEED  :: 4.0;
-    FASTER_SPEED    :: 40.0;
+    FASTER_SPEED    :: 400.0;
     ROTATION_SPEED  :: 0.3;
     ROTATION_SMOOTHING :: 0.3;
 }
@@ -140,7 +140,7 @@ resolve_camera_flying_inputs :: (using camera_flying: *Camera_Flying, delta_time
     view = inverse(transform);
 
     aspect_ratio := window_width / cast(float)window_height;
-    projection = make_projection_matrix(radians(fov), aspect_ratio, 1.0, 1000.0);
+    projection = make_projection_matrix(radians(fov), aspect_ratio, 1.0, 10000.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

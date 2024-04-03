@@ -119,13 +119,13 @@ draw_quad :: () {
 draw_ground_plane :: (size: float, shader: Shader, height_offset := 0.0) {
     scale_matrix     := make_scale_matrix4(Vector3.{size, size, 1});
     rotation_quat : Quaternion;
-    set_from_axis_and_angle(*rotation_quat, .{1, 0, 0}, radians(90));
+    set_from_axis_and_angle(*rotation_quat, .{1, 0, 0}, radians(-90));
     rotate_matrix    := rotation_matrix(Matrix4, rotation_quat);
     translate_matrix := make_translation_matrix4(.{0, height_offset, 0});
     model := translate_matrix * rotate_matrix * scale_matrix;
     set_mat4(shader, "model", model);
 
-    set_vec4(shader, "color_override", yellow);
+    set_vec4(shader, "color_override", pink);
 
     draw_quad();
 }
