@@ -15,9 +15,6 @@ Mesh :: struct {
     texture : Texture;
 
     using skeleton : Skeleton;
-
-    pose : Skeleton_Pose;
-    anim : Sampled_Animation;
 }
 
 Vertex :: struct
@@ -41,11 +38,10 @@ Skeleton :: struct
     {
         id : s16;
 
-        local_bind_transform : Matrix4;   // The joint in the rest position, relative to the parent's coordinate system
-        inverse_bind_transform : Matrix4; // The inverse of the matrix of the joint in model space.
+        local_bind_transform    : Matrix4; // The joint in the rest position, relative to the parent's coordinate system
+        inverse_bind_transform  : Matrix4; // The inverse of the matrix of the joint in model space.
 
         parent : *Joint;
-        parent_id : s16;
     }
 }
 
@@ -108,7 +104,7 @@ init_mesh_rendering_objects :: (using mesh : *Mesh)
 
 	glEnableVertexAttribArray(3); // Weights
 	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, size_of(Vertex), cast(*void)(2 * size_of(Vector3) + size_of(Vector2)));
-	glEnableVertexAttribArray(4);
+	glEnableVertexAttribArray(4); // Joints
 	glVertexAttribIPointer(4, 4, GL_SHORT, size_of(Vertex), cast(*void)(size_of(Vector4) + 2 * size_of(Vector3) + size_of(Vector2)));
 
 	glBindVertexArray(0);

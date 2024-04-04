@@ -11,7 +11,6 @@
     * Model / Animation pipeline
     * Fix Culling Radius (just base it on bounding boxes! We're already generating these every damn frame... Always will work!)
     * Gameplay Prototype
-    * Line Thickness / Flickering
     * Moon / Sun thing for shadows to come from
 
     * Heightmaps and Terrain
@@ -21,6 +20,8 @@
     * Distance Fog
       * Volumetric Fog?
     * Hair
+
+    * Line Thickness / Flickering / Just draw quads you fool!
 */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -270,18 +271,14 @@ main :: () {
 
 ////////////////////////////////////////////////////////////////////////////////
         // Animation Stuff!!!!!!!!!!!!!!!
-        /*
         if !program_state.paused {
-            reset_to_bind_pose(*pose);
+            reset_to_bind_pose(*pose); // Not necessary, most probably, but it's a nice backup.
 
             // Increment animation time
             animation_time += delta_time * animation_speed_in_fps;
-
             sample_animation(anim, 0.0, *pose, .LINEAR);
-
             generate_skinning_matrices(*pose, transpose_result = false);
         }
-        */
 
 ////////////////////////////////////////////////////////////////////////////////
 

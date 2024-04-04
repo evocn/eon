@@ -14,6 +14,24 @@ init :: () -> bool {
     {
         // SDL
         SDL_Init(SDL_INIT_VIDEO);
+        success := SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+        assert(SDL_TRUE == success);
+
+        // Settings
+        {
+            SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+            SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+            SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+            SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+
+            SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
+
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
+
+            SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1); 
+        }
+
         // Create an application window with the following settings:
         window = SDL_CreateWindow("Everett",
             600, 250, cast(s32)window_width, cast(s32)window_height,
@@ -47,13 +65,15 @@ init :: () -> bool {
         // 3. Draw all the transparent object in sorted order.
 
         {
+            glEnable(GL_MULTISAMPLE);
+
             glEnable(GL_CULL_FACE);
 
             glEnable(GL_DEPTH_TEST); 
             glDepthMask(GL_TRUE);
 
-            glLineWidth(10);
-            glPointSize(5);
+            glLineWidth(5);
+            glPointSize(10);
         }
     }
 
@@ -155,20 +175,18 @@ init :: () -> bool {
 
 
         // Animations
-        /*
         {
-            success := load_animation_from_file(*anim, "assets/animations/test.anim");
+            success := load_animation_from_file(*anim, "assets/animations/guy.night_anim");
             assert(success);
 
             animation_time = 0.0;
             animation_speed_in_fps = 40.0;
 
-            mesh:, success = table_find(*mesh_catalogue, "test");
+            mesh:, success = table_find(*mesh_catalogue, "guy");
             assert(success);
 
             pose = make_pose_for_skeleton(*mesh.skeleton);
         }
-        */
     }
 
     end_time := cast(float32)seconds_since_init();

@@ -140,7 +140,7 @@ resolve_camera_flying_inputs :: (using camera_flying: *Camera_Flying, delta_time
     view = inverse(transform);
 
     aspect_ratio := window_width / cast(float)window_height;
-    projection = make_projection_matrix(radians(fov), aspect_ratio, 1.0, 10000.0);
+    projection = make_projection_matrix(radians(fov), aspect_ratio, 0.1, 1000.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

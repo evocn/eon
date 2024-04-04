@@ -78,12 +78,18 @@ draw_cube :: ()
 //
 
 Quad :: struct {
-    points := float.[-1, -1, 0,
-                     -1,  1, 0,
-                      1,  1, 0,
-                      1, -1, 0];
-    indices:= u32.[0, 1, 2,
-                   0, 2, 3];
+    points := float.[
+                     -1, -1, 0,   1, 0, 0, 1,
+                     -1,  1, 0,   0, 1, 0, 1,
+                      1,  1, 0,   0, 0, 1, 1,
+                      1, -1, 0,   1, 1, 0, 1,
+                    ];
+
+    indices:= u32.[
+                   0, 1, 2,
+                   0, 2, 3,
+                  ];
+
     vao, vbo, ibo : GLuint;
 }
 
@@ -103,8 +109,11 @@ init_quad_rendering_objects :: (using quad : *Quad) {
 	defer glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size_of(u32) * indices.count, indices.data, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * size_of(float), cast(*void)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * size_of(float), cast(*void)0);
 	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * size_of(float), cast(*void)(3 * size_of(float)));
+	glEnableVertexAttribArray(1);
 }
 
 draw_quad :: () {

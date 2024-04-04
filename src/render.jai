@@ -23,12 +23,20 @@ render :: (game: Game) {
     {
         start_drawing_to_framebuffer(framebuffer);
         {
-            draw_grid();
-
             if settings.line_mode
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
             render_scene(game);
+
+            // Draw Skeleton Pose debug
+            {
+                // Disable depth mask and testing so we can see the skeleton through other things
+                glDisable (GL_DEPTH_TEST);
+                    matrix := make_scale_matrix4(Vector3.{1000, 1000, 1000});
+
+                    draw_pose(pose, matrix, white);
+                glEnable (GL_DEPTH_TEST);
+            }
 
             if program_state.mode == .EDITOR {
                 render_editor_overlays(game);
@@ -36,6 +44,7 @@ render :: (game: Game) {
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+            draw_grid();
         }
         draw_buffer_to_the_screen(framebuffer.color_buffer, 0, 0, xx window_width, xx window_height);
     }
@@ -103,7 +112,7 @@ render_scene :: (game: Game) {
         set_vec3(shader, "light_direction", light_direction);
 
         set_int(shader, "animated", 0);
-        draw_ground_plane(100, shader);
+        draw_ground_plane(10, shader);
     }
 
     // Draw Skybox
@@ -135,7 +144,7 @@ render_scene_to_depth_buffer :: (game: Game) {
         shader := use_depth_shader();
         defer disable_shaders();
 
-        draw_ground_plane(100, shader);
+        draw_ground_plane(10, shader);
     }
 }
 
@@ -167,6 +176,7 @@ render_editor_overlays :: (game: Game) {
 ////////////////////////////////////////////////////////////////////////////////
 // Taken from the skeletal animation sample in the jai beta
 
+// @TODO: This would be cool, but it sucks balls for some reason due to antialiasing
 draw_grid :: () {
     // Draw coordinate axes
     draw_line (.{}, .{x=1}, .{x=1, w=1});
@@ -174,9 +184,9 @@ draw_grid :: () {
     draw_line (.{}, .{z=1}, .{z=1, w=1});
     // Draw grid
     for i : -10..10
-        draw_line (xyz (xx i, 0, -10), xyz (xx i, 0, 10), .{0.4, 0.4, 0.4, 1});
+        draw_line (xyz (xx i, 0, -10), xyz (xx i, 0, 10), .{1.0, 1.0, 1.0, 1});
     for i : -10..10
-        draw_line (xyz (-10, 0, xx i), xyz (10, 0, xx i), .{0.4, 0.4, 0.4, 1});
+        draw_line (xyz (-10, 0, xx i), xyz (10, 0, xx i), .{1.0, 1.0, 1.0, 1});
 }
 
 draw_pose :: (using pose : Skeleton_Pose, transform : Matrix4, color : Vector4)

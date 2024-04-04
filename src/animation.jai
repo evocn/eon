@@ -31,10 +31,8 @@ Skeleton_Pose :: struct
 	Joint :: struct
 	{
 		parent : *Joint;
-		#as using sample : Joint_Sample;
-		// This is the transform matrix of the Joint in model space.
-		// It is used for skinning matrices generation.
-		model_space_transform := Matrix4_Identity;
+		sample : Joint_Sample;
+		model_space_transform := Matrix4_Identity; // This is the transform matrix of the Joint in model space. It is used for skinning matrices generation.
 	}
 }
 
@@ -70,15 +68,14 @@ load_animation_from_file :: (anim : *Sampled_Animation, filename : string) -> bo
 	handler : Text_File_Handler;
 	defer deinit (*handler);
 
+    handler.do_version_number = false; // @TODO: We should probably version these files, along with meshes?
+
 	found_slash, dir, basename := split_from_right (filename, #char "/");
 	if !found_slash
 		basename = filename;
 	start_file (*handler, basename, filename, optional = false);
 	if handler.failed
 		return false;
-
-	if handler.version != 1
-		return error_out (handler, "Invalid version number.");
 
 	ok : bool;
 	anim.joints.count, ok = parse_ident_and_int_line (*handler, "joint_count");
@@ -136,12 +133,10 @@ free_pose :: (pose : *Skeleton_Pose)
 	pose.skinning_matrices = .[];
 }
 
-reset_to_bind_pose :: (using pose : *Skeleton_Pose)
+reset_to_bind_pose :: (pose : *Skeleton_Pose)
 {
-	for * joints {
-        print("Local Bind Transform: %\n", skeleton.joints[it_index].local_bind_transform);
-		it.local_position, it.local_orientation, it.local_scale = decompose_transform(skeleton.joints[it_index].local_bind_transform);
-        print("Bind Pose Joint %: % % %\n", it_index, it.local_position, it.local_orientation, it.local_scale);
+	for * joint : pose.joints {
+		joint.sample.local_position, joint.sample.local_orientation, joint.sample.local_scale = decompose_transform(pose.skeleton.joints[it_index].local_bind_transform);
 	}
 }
 
@@ -152,6 +147,7 @@ Interpolation_Mode :: enum s32
 	LINEAR_SLERP :: 2;
 }
 
+/*
 interpolate_joint_samples :: inline (a : Joint_Sample, b : Joint_Sample, t : float,
                                      interpolation_mode : Interpolation_Mode) -> Joint_Sample #must
 {
@@ -203,6 +199,7 @@ interpolate_joint_samples :: inline (a : Joint_Sample, b : Joint_Sample, t : flo
     }
 	return result;
 }
+*/
 
 // Sample an animation into `pose', at a given time.
 sample_animation :: (using anim : Sampled_Animation, time_in_samples : float, pose : *Skeleton_Pose, 
@@ -216,6 +213,11 @@ sample_animation :: (using anim : Sampled_Animation, time_in_samples : float, po
 		joint_index, ok := table_find(*pose.skeleton.name_to_joint_id, joint.name);
 		if !ok
 			continue;
+
+        // @DEBUGGING
+        pose.joints[joint_index].sample = joint.samples[0];
+
+        /*
 		first_index  := cast (s64) time_in_samples;
 		second_index := (first_index + 1) % sample_count;
 		first  := joint.samples[first_index];
@@ -228,6 +230,7 @@ sample_animation :: (using anim : Sampled_Animation, time_in_samples : float, po
 			time_in_samples - first_index,
 			interpolation_mode
 		);
+        */
 	}
 }
 
@@ -236,18 +239,18 @@ sample_animation :: (using anim : Sampled_Animation, time_in_samples : float, po
 // will be used to generate the skinning matrices. This is a separate
 // function from generate_skinning_matrices because we might need
 // those transforms for other purposes (though we don't in this program).
-calculate_pose_transforms :: (using pose : *Skeleton_Pose)
+calculate_pose_transforms :: (pose : *Skeleton_Pose)
 {
-	for * joints {
-		local_transform := make_translation_matrix4(it.local_position)
-			* make_scale_matrix4(it.local_scale)
-			* rotation_matrix(Matrix4, it.local_orientation);
+	for * joint : pose.joints {
+		local_transform := make_translation_matrix4(joint.sample.local_position)
+			* make_scale_matrix4(joint.sample.local_scale)
+			* rotation_matrix(Matrix4, joint.sample.local_orientation);
 
-        parent := it.parent;
+        parent := joint.parent;
 		if parent
-		    it.model_space_transform = parent.model_space_transform * local_transform;
+		    joint.model_space_transform = parent.model_space_transform * local_transform;
 		else
-			it.model_space_transform = local_transform;
+			joint.model_space_transform = local_transform;
 	}
 }
 

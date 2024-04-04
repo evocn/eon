@@ -16,7 +16,6 @@ Entity :: struct {
 
     bounding_radius : float = 2.0;
 
-
     // Non-serialized data.
     mesh : *Mesh; @NoSerialize
 }
