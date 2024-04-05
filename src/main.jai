@@ -20,8 +20,6 @@
     * Distance Fog
       * Volumetric Fog?
     * Hair
-
-    * Line Thickness / Flickering / Just draw quads you fool!
 */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -100,7 +98,7 @@ settings : struct {
     shadow_debug        : bool;
 
     DEFAULT_CAMERA_ORIGIN :: Vector3.{0, 10, 10};
-    DEFAULT_CAMERA_ANGLES :: Vector3.{0, 1.0, 0};
+    DEFAULT_CAMERA_ANGLES :: Vector3.{0, 0, 0};
 }
 
 editor : struct {
@@ -141,7 +139,6 @@ render_context : struct {
 
 ubo : GLuint;
 g_line_vao, g_line_vbo : GLuint;
-
 pose : Skeleton_Pose;
 anim : Sampled_Animation;
 animation_time : float;
@@ -226,16 +223,32 @@ main :: () {
     {
         glGenVertexArrays (1, *g_line_vao);
         glBindVertexArray (g_line_vao);
+
         glGenBuffers (1, *g_line_vbo);
         glBindBuffer (GL_ARRAY_BUFFER, g_line_vbo);
         glBufferData (GL_ARRAY_BUFFER, size_of (Vertex_Pos_Color) * 2, null, GL_DYNAMIC_DRAW);
+
         glEnableVertexAttribArray (0);
-        glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, size_of (Vertex_Pos_Color), cast (*void) 0);
+        glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, size_of(Vertex_Pos_Color), cast (*void) 0);
         glEnableVertexAttribArray (1);
-        glVertexAttribPointer (1, 4, GL_FLOAT, GL_FALSE, size_of (Vertex_Pos_Color), cast (*void) size_of (Vector3));
+        glVertexAttribPointer (1, 4, GL_FLOAT, GL_FALSE, size_of(Vertex_Pos_Color), cast (*void) size_of (Vector3));
 
         glBindVertexArray (0);
-        glBindBuffer (GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    // Animation Debugging
+    {
+        success := load_animation_from_file(*anim, "assets/animations/guy.night_anim");
+        assert(success);
+
+        animation_time = 0.0;
+        animation_speed_in_fps = 40.0;
+
+        mesh:, success = table_find(*mesh_catalogue, "guy");
+        assert(success);
+
+        pose = make_pose_for_skeleton(*mesh.skeleton);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -268,19 +281,6 @@ main :: () {
                 }
             }
         }
-
-////////////////////////////////////////////////////////////////////////////////
-        // Animation Stuff!!!!!!!!!!!!!!!
-        if !program_state.paused {
-            reset_to_bind_pose(*pose); // Not necessary, most probably, but it's a nice backup.
-
-            // Increment animation time
-            animation_time += delta_time * animation_speed_in_fps;
-            sample_animation(anim, 0.0, *pose, .LINEAR);
-            generate_skinning_matrices(*pose, transpose_result = false);
-        }
-
-////////////////////////////////////////////////////////////////////////////////
 
         // Render
         ////////////////////////////////////////////////////////////////////////////////
@@ -349,8 +349,6 @@ using Basic :: #import "Basic"()(MEMORY_DEBUGGER=DEBUG_MEMORY);
 
 #import "File";
 #import "Text_File_Handler";
-
-#import "gltf_parser";
 
 #import "stb_image";
 #import "freetype255";

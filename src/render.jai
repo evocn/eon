@@ -23,20 +23,33 @@ render :: (game: Game) {
     {
         start_drawing_to_framebuffer(framebuffer);
         {
+            // Animation Debugging
+            {
+                {
+                    //reset_to_bind_pose(*pose);
+
+                    /*
+                    sample_animation(
+                        anim,
+                        0.0,
+                        *pose,
+                        .LINEAR
+                    );
+                    */
+
+                    generate_skinning_matrices(*pose);
+                }
+
+                overall_transform := Matrix4_Identity;
+                translate(*overall_transform, Vector3.{0, 10, 0});
+                scale(*overall_transform, Vector3.{0.1, 0.1, 0.1});
+                draw_pose(pose, overall_transform, yellow);
+            }
+
             if settings.line_mode
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
             render_scene(game);
-
-            // Draw Skeleton Pose debug
-            {
-                // Disable depth mask and testing so we can see the skeleton through other things
-                glDisable (GL_DEPTH_TEST);
-                    matrix := make_scale_matrix4(Vector3.{1000, 1000, 1000});
-
-                    draw_pose(pose, matrix, white);
-                glEnable (GL_DEPTH_TEST);
-            }
 
             if program_state.mode == .EDITOR {
                 render_editor_overlays(game);
@@ -176,70 +189,72 @@ render_editor_overlays :: (game: Game) {
 ////////////////////////////////////////////////////////////////////////////////
 // Taken from the skeletal animation sample in the jai beta
 
-// @TODO: This would be cool, but it sucks balls for some reason due to antialiasing
 draw_grid :: () {
-    // Draw coordinate axes
-    draw_line (.{}, .{x=1}, .{x=1, w=1});
-    draw_line (.{}, .{y=1}, .{y=1, w=1});
-    draw_line (.{}, .{z=1}, .{z=1, w=1});
     // Draw grid
     for i : -10..10
-        draw_line (xyz (xx i, 0, -10), xyz (xx i, 0, 10), .{1.0, 1.0, 1.0, 1});
+        draw_line (xyz (xx i, 0, -10), xyz (xx i, 0, 10), .{0.4, 0.4, 0.4, 1});
     for i : -10..10
-        draw_line (xyz (-10, 0, xx i), xyz (10, 0, xx i), .{1.0, 1.0, 1.0, 1});
+        draw_line (xyz (-10, 0, xx i), xyz (10, 0, xx i), .{0.4, 0.4, 0.4, 1});
+
+    glLineWidth(10);
+        // Draw coordinate axes
+        draw_line (.{}, .{x=1}, .{x=1, w=1});
+        draw_line (.{}, .{y=1}, .{y=1, w=1});
+        draw_line (.{}, .{z=1}, .{z=1, w=1});
+    glLineWidth(5);
 }
 
-draw_pose :: (using pose : Skeleton_Pose, transform : Matrix4, color : Vector4)
+draw_pose :: (pose : Skeleton_Pose, overall_offset_transform : Matrix4, color : Vector4)
 {
-	for * joints
-	{
-		parent_transform : Matrix4 = ---;
-        parent := it.parent;
-		if parent
-		    parent_transform = transform * parent.model_space_transform;
-		else
-			parent_transform = transform;
+    for * joint : pose.joints
+    {
+        parent_transform : Matrix4 = ---;
+        parent := joint.parent;
+        if parent
+            parent_transform = overall_offset_transform * parent.model_space_transform;
+        else
+            parent_transform = overall_offset_transform;
 
-		world_space_transform := transform * it.model_space_transform;
-		start := xyz (
-			parent_transform._14,
-			parent_transform._24,
-			parent_transform._34
-		);
-		end := xyz (
-			world_space_transform._14,
-			world_space_transform._24,
-			world_space_transform._34
-		);
-		draw_line (start, end, color);
-	}
+        world_space_transform := overall_offset_transform * joint.model_space_transform;
+        start := xyz (
+            parent_transform._14,
+            parent_transform._24,
+            parent_transform._34
+        );
+        end := xyz (
+            world_space_transform._14,
+            world_space_transform._24,
+            world_space_transform._34
+        );
+        draw_line(start, end, color);
+    }
 }
 
 // Used for line rendering
 Vertex_Pos_Color :: struct
 {
-	position : Vector3;
-	color : Vector4;
+    position : Vector3;
+    color : Vector4;
 }
 
 draw_line :: inline (start : Vector3, end : Vector3, color : Vector4)
 {
-	draw_line (start, end, color, color);
+    draw_line (start, end, color, color);
 }
 
 // This is maybe the slowest way possible to draw a line!
 draw_line :: (start : Vector3, end : Vector3, start_color : Vector4, end_color : Vector4)
 {
-	data : [2]Vertex_Pos_Color = ---;
-	data[0].position = start;
-	data[0].color    = start_color;
-	data[1].position = end;
-	data[1].color    = end_color;
+    data : [2]Vertex_Pos_Color = ---;
+    data[0].position = start;
+    data[0].color    = start_color;
+    data[1].position = end;
+    data[1].color    = end_color;
 
-	glBindVertexArray (g_line_vao);
-	glBindBuffer (GL_ARRAY_BUFFER, g_line_vbo);
-	// Fill the vertex buffer with our two line vertices
-	glBufferSubData (GL_ARRAY_BUFFER, 0, size_of (Vertex_Pos_Color) * 2, data.data);
+    glBindVertexArray (g_line_vao);
+    glBindBuffer (GL_ARRAY_BUFFER, g_line_vbo);
+    // Fill the vertex buffer with our two line vertices
+    glBufferSubData (GL_ARRAY_BUFFER, 0, size_of (Vertex_Pos_Color) * 2, data.data);
 
     shader := use_basic_shader();
     {

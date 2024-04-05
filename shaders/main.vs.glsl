@@ -23,7 +23,7 @@ uniform int animated;
 
 const int MAX_JOINTS  = 100;
 const int MAX_WEIGHTS = 4;
-layout (std140) uniform Block {
+layout (std140, row_major) uniform Block {
 	mat4 skinning_matrices[MAX_JOINTS];
 };
 
@@ -38,36 +38,38 @@ out vec4 fragment_position_in_light_space;
 ////////////////////////////////////////////////////////////////////////////////
 
 void main() {
-    vec3 animation_space_position   = vec3(0);
-    vec3 animation_space_normal     = vec3(0);
+    vec3 object_space_position  = vec3(0);
+    vec3 object_space_normal    = vec3(0);
 
     if (animated == 1) {
-        for (int i = 0; i < MAX_WEIGHTS; i++) {
+        for (int i = 0; (i < MAX_WEIGHTS) && (VertexJoints[i] != -1); i++)
+        {
             int joint_index = VertexJoints[i];
 
-            float weight;
-            if (i == MAX_WEIGHTS - 1) weight = 1.0 - (VertexWeights.x + VertexWeights.y + VertexWeights.z);
-                                 else weight = VertexWeights[i];
+            float weight = VertexWeights[i];
 
             mat4 skinning_matrix = skinning_matrices[joint_index];
-            vec4 joint_space_position = skinning_matrix * vec4(VertexPosition, 1.0);
-            vec4 joint_space_normal   = skinning_matrix * vec4(VertexNormal, 0.0);
-            animation_space_position  += joint_space_position.xyz * weight;
-            animation_space_normal    += joint_space_normal.xyz   * weight;
+            vec4 bind_space_position = skinning_matrix * vec4(VertexPosition, 1.0);
+            vec4 bind_space_normal   = skinning_matrix * vec4(VertexNormal, 0.0);
+            object_space_position  += bind_space_position.xyz * weight;
+            object_space_normal    += bind_space_normal.xyz   * weight;
         }
     }
-    else {
-        animation_space_position    = VertexPosition;
-        animation_space_normal      = VertexNormal;
+    else 
+    {
+        object_space_position    = VertexPosition;
+        object_space_normal      = VertexNormal;
     }
 
-    vec3 object_space_position = vec3(model * vec4(animation_space_position, 1.0));
-	vec3 object_space_normal = animation_space_normal.xyz;
+    vec3 model_space_position   = vec3(model * vec4(object_space_position, 1.0));
+	vec3 model_space_normal     = object_space_normal.xyz;
 
-    gl_Position = projection * view * vec4(object_space_position, 1.0);
+    gl_Position = projection * view * vec4(model_space_position, 1.0);
 
     texture_coordinates = VertexUV;
-    fragment_position_in_light_space = light_space_matrix * vec4(object_space_position, 1.0);
-    fragment_position   = object_space_position;
-    fragment_normal     = object_space_normal;
+    fragment_position_in_light_space = light_space_matrix * vec4(model_space_position, 1.0);
+/*
+    fragment_position   = model_space_position; // @TODO: Unsure if this is right...
+*/
+    fragment_normal     = model_space_normal;
 }

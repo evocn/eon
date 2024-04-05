@@ -14,23 +14,6 @@ init :: () -> bool {
     {
         // SDL
         SDL_Init(SDL_INIT_VIDEO);
-        success := SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
-        assert(SDL_TRUE == success);
-
-        // Settings
-        {
-            SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-            SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-            SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-            SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-
-            SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
-
-            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-            SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
-
-            SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1); 
-        }
 
         // Create an application window with the following settings:
         window = SDL_CreateWindow("Everett",
@@ -136,18 +119,15 @@ init :: () -> bool {
                 table_add(*mesh_catalogue, name, pointer);
             }
 
-            new_mesh("simple");
+            new_mesh("test");
             new_mesh("guy");
-            //new_mesh("test");
-            //new_mesh("bird";
-            //new_mesh("cube");
-            //new_mesh("finch");
-            //new_mesh("CubeTest");
-            //new_mesh("CharacterTest");
         }
 
-        mesh, success := table_find(*mesh_catalogue, "simple");
-        assert(success);
+
+
+        // @TODO: Load Animations Here!
+
+
 
         // Primitives
         init_quad_rendering_objects(*quad);
@@ -172,21 +152,6 @@ init :: () -> bool {
 
         init_rendering_objects(*shadow_map);
         init_rendering_objects(*framebuffer);
-
-
-        // Animations
-        {
-            success := load_animation_from_file(*anim, "assets/animations/guy.night_anim");
-            assert(success);
-
-            animation_time = 0.0;
-            animation_speed_in_fps = 40.0;
-
-            mesh:, success = table_find(*mesh_catalogue, "guy");
-            assert(success);
-
-            pose = make_pose_for_skeleton(*mesh.skeleton);
-        }
     }
 
     end_time := cast(float32)seconds_since_init();

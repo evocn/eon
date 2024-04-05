@@ -52,26 +52,33 @@ draw_entity :: (entity : Entity, shader : Shader) {
         model := translation * rotation * scale_mat;
         set_mat4(shader, "model", model);
 
-        if false {
-            assert (pose.skinning_matrices.count <= MAX_JOINTS, "Skinning matrices array cannot have more than % elements for now.");
+        // Pass Skinning Matrices
+        {
+            assert(pose.skinning_matrices.count <= MAX_JOINTS, "Skinning matrices array cannot have more than % elements for now.");
 
-            // @TODO: This is currently copying over all the matrices because of the stupid fucking transposition thing.
-            // We should probably just transpose when we generate these, or whatever.
-            new_skinning_matrices := NewArray(pose.skinning_matrices.count, Matrix4);
-            for pose.skinning_matrices {
-                new_skinning_matrices[it_index] = transpose(it);
-                //new_skinning_matrices[it_index] = it;
-            }
-
-            // Fill the uniform buffer with the skinning data
             glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * new_skinning_matrices.count, new_skinning_matrices.data);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * pose.skinning_matrices.count, pose.skinning_matrices.data);
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
             set_int(shader, "animated", 1);
         }
-        else {
-            set_int(shader, "animated", 0);
+
+        // Animated Mesh
+        {
+            // For now, let's just try to get the bind pose over to the GPU, and check our work!
+            num_joints : int = 3;
+            bind_poses := NewArray(num_joints, Matrix4);
+
+            for i : 0..num_joints-1 {
+                //bind_poses[i] = entity.mesh.skeleton.joints[i].local_bind_transform;
+                bind_poses[i] = inverse(entity.mesh.skeleton.joints[i].inverse_bind_transform);
+            }
+
+            glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * bind_poses.count, bind_poses.data);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+            set_int(shader, "animated", 1);
         }
 
         draw_mesh(entity.mesh);
