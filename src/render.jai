@@ -21,31 +21,22 @@ render :: (game: Game) {
     ////////////////////////////////////////////////////////////////////////////////
     // Main Pass
     {
+        {
+            reset_to_bind_pose(*pose);
+
+            sample_animation(
+                anim,
+                animation_time,
+                *pose,
+                .LINEAR
+            );
+
+            generate_skinning_matrices(*pose, transpose_result = false);
+        }
+
+
         start_drawing_to_framebuffer(framebuffer);
         {
-            // Animation Debugging
-            {
-                {
-                    //reset_to_bind_pose(*pose);
-
-                    /*
-                    sample_animation(
-                        anim,
-                        0.0,
-                        *pose,
-                        .LINEAR
-                    );
-                    */
-
-                    generate_skinning_matrices(*pose);
-                }
-
-                overall_transform := Matrix4_Identity;
-                translate(*overall_transform, Vector3.{0, 10, 0});
-                scale(*overall_transform, Vector3.{0.1, 0.1, 0.1});
-                draw_pose(pose, overall_transform, yellow);
-            }
-
             if settings.line_mode
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -104,11 +95,11 @@ render_scene :: (game: Game) {
 
         entities_drawn := 0;
         for entity : game.entities {
-            /*
-            if !entity_is_inside_frustum(view_frustum, entity) {
-                continue;
+            if settings.frustum_culling {
+                if !entity_is_inside_frustum(view_frustum, entity) {
+                    continue;
+                }
             }
-            */
 
             draw_entity(entity, shader);
             entities_drawn += 1;
@@ -128,6 +119,7 @@ render_scene :: (game: Game) {
         draw_ground_plane(10, shader);
     }
 
+    /*
     // Draw Skybox
     {
         shader := use_skybox_shader();
@@ -135,6 +127,7 @@ render_scene :: (game: Game) {
 
         draw_skybox(shader);
     }
+    */
 }
 
 

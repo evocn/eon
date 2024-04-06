@@ -5,9 +5,9 @@
 
 Joint_Sample :: struct
 {
-    local_position : Vector3;
-    local_orientation : Quaternion;
-    local_scale : Vector3;
+    local_position      : Vector3;
+    local_orientation   : Quaternion;
+    local_scale         : Vector3;
 }
 
 Joint_Animation :: struct
@@ -31,7 +31,7 @@ Skeleton_Pose :: struct
     Joint :: struct
     {
         parent : *Joint;
-        sample : Joint_Sample;
+        using #as sample : Joint_Sample;
         model_space_transform := Matrix4_Identity; // This is the transform matrix of the Joint in model space. It is used for skinning matrices generation.
     }
 }
@@ -39,180 +39,198 @@ Skeleton_Pose :: struct
 // Allocate a pose for a given skeleton and set it to the bind pose
 make_pose_for_skeleton :: (skeleton : *Skeleton) -> Skeleton_Pose #must
 {
-    pose : Skeleton_Pose;
-    pose.skeleton = skeleton;
-    pose.joints = NewArray(skeleton.joints.count, Skeleton_Pose.Joint);
-    
-    // Assign Parents in the Pose
-    for * joint : pose.joints
-    {
-        joint_in_skeleton := *skeleton.joints[it_index];
-        if joint_in_skeleton.parent
-        {
-            parent_id := joint_in_skeleton.parent - skeleton.joints.data;
-            joint.parent = *pose.joints[parent_id];
-        }
-        else
-            joint.parent = null;
-    }
+	result : Skeleton_Pose;
+	result.skeleton = skeleton;
+	result.joints = NewArray (skeleton.joints.count, Skeleton_Pose.Joint);
 
-    reset_to_bind_pose(*pose);
+	for * result.joints
+	{
+		joint_in_skeleton := *skeleton.joints[it_index];
+		if joint_in_skeleton.parent
+		{
+			parent_id := joint_in_skeleton.parent - skeleton.joints.data;
+			it.parent = *result.joints[parent_id];
+		}
+		else
+			it.parent = null;
+	}
 
-    return pose;
+	reset_to_bind_pose (*result);
+
+	return result;
 }
 
-reset_to_bind_pose :: (pose : *Skeleton_Pose)
+reset_to_bind_pose :: (using pose : *Skeleton_Pose)
 {
-    for * joint : pose.joints {
-        joint.sample.local_position, joint.sample.local_orientation, joint.sample.local_scale 
-            = decompose_transform(pose.skeleton.joints[it_index].local_bind_transform);
-    }
+	for * joints
+	{
+		it.local_position,
+		it.local_orientation,
+		it.local_scale = decompose_transform (skeleton.joints[it_index].local_bind_transform);
+	}
 }
 
-// This function calculates the model space pose transforms which are used to generate the skinning matrices.
-calculate_pose_transforms :: (pose : *Skeleton_Pose)
+Interpolation_Mode :: enum s32
 {
-    for * joint : pose.joints
-    {
-        local_transform := 
-              make_translation_matrix4  (joint.sample.local_position)
-            * make_scale_matrix4        (joint.sample.local_scale)
-            * rotation_matrix  (Matrix4, joint.sample.local_orientation);
-
-        parent := joint.parent;
-        if parent
-            joint.model_space_transform = parent.model_space_transform * local_transform;
-        else
-            joint.model_space_transform = local_transform;
-    }
+	NEAREST :: 0;
+	LINEAR  :: 1;
+	LINEAR_SLERP :: 2;
 }
 
-// A skinning matrix is the difference between the bind pose and the actual pose we want.
+interpolate_joint_samples :: inline (
+	a : Joint_Sample,
+	b : Joint_Sample,
+	t : float,
+	interpolation_mode : Interpolation_Mode
+) -> Joint_Sample #must
+{
+	// To interpolate joints, we use linear interpolation. This is
+	// fine for translation and scale, but for orientation we have
+	// to do it a bit differently due to the way quaternions work.
+	// In short, we can only use normalized quaternions to represent
+	// rotation in 3D, so to interpolate two quaternions we use
+	// normalized linear interpolation (hence the name nlerp) which
+	// is just a normal lerp followed by normalization.
+	// There is another method of interpolation called spherical
+	// interpolation (slerp), which is slower but has benefits over
+	// nlerp that in many cases are not noticeable. To not go into too
+	// much details, here are things that you can read to understand
+	// quaternions and interpolation:
+	//   * Visualizing quaternions, an explorable video series by 3Blue1Brown:
+	//    https://eater.net/quaternions
+	//   * Foundations of Game Engine Development, Volume 1: Mathematics by Eric Lengyel
+	//   * Understanding Slerp then not using it by Jonathan Blow (the link seems dead):
+	//    http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/
+
+	// When interpolating two quaternions together, because it can
+	// be thought of a point on a sphere, there are multiple
+	// possible straight paths we can take. In our case, we want the
+	// shortest path so this is what the following functions do:
+	nlerp_shortest :: (a : Quaternion, b : Quaternion, t : float) -> Quaternion #must
+	{
+		first  := a;
+		second := b;
+		// When thinking about the axis-angle representation of the quaternions,
+		// if the dot product is negative, that means that the axes or rotation are
+		// at least 90 degrees apart. Negating the axis and angle (the whole quaternion)
+		// makes the quaternions' axes less than 90 degrees apart in that case, without
+		// changing the rotation the quaternion represents, and makes the interpolation
+		// take the shortest path.
+		if dot (first, second) < 0
+			second = -second;
+
+		return nlerp (first, second, t);
+	}
+
+	slerp_shortest :: (a : Quaternion, b : Quaternion, t : float) -> Quaternion #must
+	{
+		first  := a;
+		second := b;
+		if dot (first, second) < 0
+			second = -second;
+
+		return slerp (first, second, t);
+	}
+
+	result : Joint_Sample = ---;
+	if #complete interpolation_mode ==
+	{
+	case .NEAREST;
+		if t < 0.5 then result = a;
+		else            result = b;
+	case .LINEAR;
+		t = clamp (t, 0, 1);
+		result.local_position    = lerp (a.local_position, b.local_position, t);
+		result.local_orientation = nlerp_shortest (a.local_orientation, b.local_orientation, t);
+		result.local_scale       = lerp (a.local_scale, b.local_scale, t);
+	case .LINEAR_SLERP;
+		t = clamp (t, 0, 1);
+		result.local_position    = lerp (a.local_position, b.local_position, t);
+		result.local_orientation = slerp_shortest (a.local_orientation, b.local_orientation, t);
+		result.local_scale       = lerp (a.local_scale, b.local_scale, t);
+	}
+	return result;
+}
+
+// Sample an animation into `pose', at a given time. Our implementation
+// and data layout is not very cache friendly because it reads data in a
+// lot of different places, but for this example this is fine.
+// What we do is that the samples for a joint J are all contiguous,
+// but the best thing to do would probably be to have all joint samples
+// for a pose P be contiguous, and we'd iterate over all the joints in
+// the first pose, then the second pose to interpolate them.
+sample_animation :: (
+	using anim : Sampled_Animation,
+	time_in_samples : float,
+	pose : *Skeleton_Pose,
+	interpolation_mode := Interpolation_Mode.LINEAR
+)
+{
+	time_in_samples = fmod_cycling (time_in_samples, cast (float) sample_count);
+	for joint : joints
+	{
+		// Ideally we would be caching the results of all these
+		// hash table lookups in a flat array, but for simplicity
+		// we don't do it.
+		joint_index, ok := table_find (*pose.skeleton.name_to_joint_id, joint.name);
+		if !ok
+			continue;
+		first_index  := cast (s64) time_in_samples;
+		second_index := (first_index + 1) % sample_count;
+		first  := joint.samples[first_index];
+		second := joint.samples[second_index];
+		pose.joints[joint_index].sample = interpolate_joint_samples (
+			first,
+			second,
+			// Because time is in samples, this will result in
+			// something between 0 and 1, which is what we want
+			time_in_samples - first_index,
+			interpolation_mode
+		);
+	}
+}
+
+// After we've done the sampling of the animation, and maybe other
+// operations on the pose, we can calculate the pose transforms that
+// will be used to generate the skinning matrices. This is a separate
+// function from generate_skinning_matrices because we might need
+// those transforms for other purposes (though we don't in this program).
+calculate_pose_transforms :: (using pose : *Skeleton_Pose)
+{
+	for * joints
+	{
+		local_transform := make_translation_matrix4 (it.local_position)
+			* make_scale_matrix4 (it.local_scale)
+			* rotation_matrix(Matrix4, it.local_orientation);
+
+        parent := it.parent;
+		if parent
+		    it.model_space_transform = parent.model_space_transform * local_transform;
+		else
+			it.model_space_transform = local_transform;
+	}
+}
+
+// A skinning matrix is the difference between the bind pose and the actual pose we want,
+// or, in other words, a matrix that represents how much we need to move/rotate/scale
+// the vertices for them to go into the desired position.
 // For reference, if the pose is the same as the bind pose, that means we don't want to
 // move the vertices at all, and the model space transform and inverse bind transform
 // cancel each other out (resulting in identity matrices everywhere).
 // This is also why we use the inverse of the bind transform: you can kind of think of multiplying
 // by the inverse as taking the difference between the two coordinate spaces.
-generate_skinning_matrices :: (using pose : *Skeleton_Pose)
+generate_skinning_matrices :: (using pose : *Skeleton_Pose, transpose_result : bool)
 {
 	// The skinning matrices array isn't allocated as long as you don't call this function.
 	if !skinning_matrices.data
-		skinning_matrices = NewArray(joints.count, Matrix4, initialized = false);
-	calculate_pose_transforms(pose);
-	for i : 0..skinning_matrices.count - 1 {
+		skinning_matrices = NewArray (joints.count, Matrix4, initialized = false);
+	calculate_pose_transforms (pose);
+	for i : 0..skinning_matrices.count - 1
+	{
 		skinning_matrices[i] = joints[i].model_space_transform * skeleton.joints[i].inverse_bind_transform;
+		if transpose_result
+			transpose(*skinning_matrices[i]);
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-Interpolation_Mode :: enum s32
-{
-    NEAREST :: 0;
-    LINEAR  :: 1;
-    LINEAR_SLERP :: 2;
-}
-
-interpolate_joint_samples :: inline (
-    a : Joint_Sample,
-    b : Joint_Sample,
-    t : float,
-    interpolation_mode : Interpolation_Mode
-) -> Joint_Sample #must
-{
-    // To interpolate joints, we use linear interpolation. This is
-    // fine for translation and scale, but for orientation we have
-    // to do it a bit differently due to the way quaternions work.
-    // In short, we can only use normalized quaternions to represent
-    // rotation in 3D, so to interpolate two quaternions we use
-    // normalized linear interpolation (hence the name nlerp) which
-    // is just a normal lerp followed by normalization.
-    // There is another method of interpolation called spherical
-    // interpolation (slerp), which is slower but has benefits over
-    // nlerp that in many cases are not noticeable. To not go into too
-    // much details, here are things that you can read to understand
-    // quaternions and interpolation:
-    //   * Visualizing quaternions, an explorable video series by 3Blue1Brown:
-    //    https://eater.net/quaternions
-    //   * Foundations of Game Engine Development, Volume 1: Mathematics by Eric Lengyel
-    //   * Understanding Slerp then not using it by Jonathan Blow (the link seems dead):
-    //    http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/
-
-    // When interpolating two quaternions together, because it can
-    // be thought of a point on a sphere, there are multiple
-    // possible straight paths we can take. In our case, we want the
-    // shortest path so this is what the following functions do:
-    nlerp_shortest :: (a : Quaternion, b : Quaternion, t : float) -> Quaternion #must
-    {
-        first  := a;
-        second := b;
-        // When thinking about the axis-angle representation of the quaternions,
-        // if the dot product is negative, that means that the axes or rotation are
-        // at least 90 degrees apart. Negating the axis and angle (the whole quaternion)
-        // makes the quaternions' axes less than 90 degrees apart in that case, without
-        // changing the rotation the quaternion represents, and makes the interpolation
-        // take the shortest path.
-        if dot (first, second) < 0
-            second = -second;
-
-        return nlerp (first, second, t);
-    }
-
-    slerp_shortest :: (a : Quaternion, b : Quaternion, t : float) -> Quaternion #must
-    {
-        first  := a;
-        second := b;
-        if dot (first, second) < 0
-            second = -second;
-
-        return slerp (first, second, t);
-    }
-
-    result : Joint_Sample = ---;
-    if #complete interpolation_mode ==
-    {
-    case .NEAREST;
-        if t < 0.5 then result = a;
-        else            result = b;
-    case .LINEAR;
-        t = clamp (t, 0, 1);
-        result.local_position    = lerp (a.local_position, b.local_position, t);
-        result.local_orientation = nlerp_shortest (a.local_orientation, b.local_orientation, t);
-        result.local_scale       = lerp (a.local_scale, b.local_scale, t);
-    case .LINEAR_SLERP;
-        t = clamp (t, 0, 1);
-        result.local_position    = lerp (a.local_position, b.local_position, t);
-        result.local_orientation = slerp_shortest (a.local_orientation, b.local_orientation, t);
-        result.local_scale       = lerp (a.local_scale, b.local_scale, t);
-    }
-    return result;
-}
-
-// Sample an animation into `pose', at a given time.
-sample_animation :: (
-    using anim : Sampled_Animation,
-    time_in_samples : float,
-    pose : *Skeleton_Pose,
-    interpolation_mode := Interpolation_Mode.LINEAR
-)
-{
-    time_in_samples = fmod_cycling(time_in_samples, cast (float) sample_count);
-    for joint : joints
-    {
-        joint_index, ok := table_find (*pose.skeleton.name_to_joint_id, joint.name);
-        if !ok then continue;
-
-        first_index  := cast(s64)time_in_samples;
-        second_index := (first_index + 1) % sample_count;
-        first  := joint.samples[first_index];
-        second := joint.samples[second_index];
-        pose.joints[joint_index].sample = interpolate_joint_samples (
-            first,
-            second,
-            time_in_samples - first_index, // Between 0 and 1.
-            interpolation_mode
-        );
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

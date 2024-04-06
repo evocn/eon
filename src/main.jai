@@ -96,6 +96,8 @@ settings : struct {
     line_mode           : bool;
     draw_bounding_boxes : bool;
     shadow_debug        : bool;
+    skeleton_debug      : bool = true;
+    frustum_culling     : bool;
 
     DEFAULT_CAMERA_ORIGIN :: Vector3.{0, 10, 10};
     DEFAULT_CAMERA_ANGLES :: Vector3.{0, 0, 0};
@@ -280,6 +282,8 @@ main :: () {
                     simulate(*game, delta_time);
                 }
             }
+
+            animation_time += delta_time * animation_speed_in_fps;
         }
 
         // Render

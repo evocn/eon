@@ -94,12 +94,20 @@ handle_events_and_gather_input :: () {
                     settings.line_mode = !settings.line_mode;
                 }
 
+                if event.key.keysym.sym == SDLK_f {
+                    settings.frustum_culling = !settings.frustum_culling;
+                }
+
                 if event.key.keysym.sym == SDLK_b {
                     settings.draw_bounding_boxes = !settings.draw_bounding_boxes;
                 }
 
                 if event.key.keysym.sym == SDLK_g {
                     settings.shadow_debug = !settings.shadow_debug;
+                }
+
+                if event.key.keysym.sym == SDLK_h {
+                    settings.skeleton_debug = !settings.skeleton_debug;
                 }
 
                 if event.key.keysym.sym == SDLK_0 {

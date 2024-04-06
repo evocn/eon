@@ -127,9 +127,11 @@ entities_window :: (entities : *[..] *Entity) {
 settings_window :: () {
     ImGui.Begin("Settings");
     {
-        ImGui.Checkbox("Line Mode", *settings.line_mode);
-        ImGui.Checkbox("Bounding Boxes", *settings.draw_bounding_boxes);
-        ImGui.Checkbox("Shadow Debug", *settings.shadow_debug);
+        ImGui.Checkbox("[L] Line Mode",         *settings.line_mode);
+        ImGui.Checkbox("[B] Bounding Boxes",    *settings.draw_bounding_boxes);
+        ImGui.Checkbox("[F] Frustum Culling",   *settings.frustum_culling);
+        ImGui.Checkbox("[G] Shadow Debug",      *settings.shadow_debug);
+        ImGui.Checkbox("[K] Skeleton Debug",    *settings.skeleton_debug);
     }
     ImGui.End();
 }

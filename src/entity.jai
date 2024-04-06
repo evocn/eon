@@ -63,25 +63,14 @@ draw_entity :: (entity : Entity, shader : Shader) {
             set_int(shader, "animated", 1);
         }
 
-        // Animated Mesh
-        {
-            // For now, let's just try to get the bind pose over to the GPU, and check our work!
-            num_joints : int = 3;
-            bind_poses := NewArray(num_joints, Matrix4);
-
-            for i : 0..num_joints-1 {
-                //bind_poses[i] = entity.mesh.skeleton.joints[i].local_bind_transform;
-                bind_poses[i] = inverse(entity.mesh.skeleton.joints[i].inverse_bind_transform);
-            }
-
-            glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * bind_poses.count, bind_poses.data);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-            set_int(shader, "animated", 1);
-        }
-
         draw_mesh(entity.mesh);
+
+        // Animation Debugging
+        if settings.skeleton_debug {
+            glDisable(GL_DEPTH_TEST);
+            draw_pose(pose, model, pink);
+            glEnable(GL_DEPTH_TEST);
+        }
     }
     else {
         log_error("Trying to draw entity % which has no mesh!\n", entity.name);
