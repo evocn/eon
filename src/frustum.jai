@@ -1,7 +1,7 @@
-// Author: Alex Hartford
-// Program: Everett
-// File: Frustum
-// Date: August 2023
+// Alex Hartford
+// Everett
+// Frustum
+// April 2024
 
 Orthographic_Frustum :: struct {
     near    : float;
@@ -18,18 +18,18 @@ get_projection_matrix :: (using frustum: Orthographic_Frustum) -> Matrix4 {
     );
 }
 
-//
-//
+////////////////////////////////////////////////////////////////////////////////
 
 Frustum :: struct {
     planes : [6] Plane3;
 }
 
-// @TODO: Make a better spatial query, something like a bounding sphere test on its furthest extent to make sure that it's completely out.
 entity_is_inside_frustum :: (frustum : Frustum, entity : Entity) -> bool {
+    bounding_radius := extent(entity.bounding_box);
+
     for frustum.planes {
-        distance := plane_dot(it, entity.position);
-        if distance < 0 && abs(distance) > entity.bounding_radius {
+        distance := plane_dot(it, get_center_of_bounding_box(entity));
+        if distance < 0 && abs(distance) > bounding_radius {
             return false;
         }
     }

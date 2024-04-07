@@ -17,16 +17,15 @@ maybe_select_entity :: (entities: [..] *Entity) {
 // @TODO:
 // Track the distance of each t value to get the closest collision.
 // Make bounding boxes change with scale.
+// Actually just do this completely differently?
 find_which_entity_pointed_at :: (entities: [..] *Entity) {
     x, y : s32;
     buttons := SDL_GetMouseState(*x, *y);
 
     ray := generate_mouse_ray(xx x, xx y);
 
-    for entities {
-        new_box := calculate_bounding_box(it);
-
-        intersected := intersection(ray, new_box);
+    for entity : entities {
+        intersected := intersection(ray, entity.bounding_box);
         if intersected {
             editor.selected_entity = it_index;
         }

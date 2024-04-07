@@ -3,13 +3,13 @@
 // Alex Hartford
 // August 2023
 
-SHADOW_MAP_SIZE :: 8000;
+SHADOW_MAP_SIZE :: 4000;
 
 shadow_map : Shadow_Map;
 
 Shadow_Map :: struct {
     depth_buffer : Depth_Buffer;
-    frustum := Orthographic_Frustum.{near = 50.0, far = 50.0, width = 50.0, height = 50.0};
+    frustum := Orthographic_Frustum.{near = 20.0, far = 20.0, width = 20.0, height = 20.0};
     light_position := Vector3.{1.0, 1.0, 1.0};
 }
 

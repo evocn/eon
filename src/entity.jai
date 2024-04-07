@@ -15,9 +15,8 @@ Entity :: struct {
     mesh_name : string;
     animation_name : string;
 
-    bounding_radius : float = 2.0;
-
     // Non-serialized data.
+    bounding_box : Box;         @NoSerialize
     mesh : *Mesh;               @NoSerialize
 
     animation : *Sampled_Animation;  @NoSerialize
@@ -35,6 +34,12 @@ Entity_Flags :: enum_flags {
 update :: (using entity : *Entity, delta_time : float) {
     //update_transforms_with_input(entity, delta_time);
 
+    // Recalculate Bounding Box
+    {
+        bounding_box = calculate_bounding_box(entity);
+    }
+
+    // Update Animation
     if entity.animation {
         reset_to_bind_pose(*pose);
 
@@ -61,49 +66,60 @@ calculate_bounding_box :: (using entity : Entity) -> Box {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+generate_model_matrix :: (using entity: Entity) -> Matrix4 {
+    scale_mat   := make_scale_matrix4(Vector3.{entity.scale, entity.scale, entity.scale});
+    rotation    := rotation_matrix(Matrix4, entity.orientation);
+    translation := make_translation_matrix4(entity.position);
+    return translation * rotation * scale_mat;
+}
+
 draw_entity :: (entity : Entity, shader : Shader) {
-    if entity.mesh {
-        bind_id := bind_texture(entity.mesh.texture.id);
-        set_int(shader, "diffuse_texture", bind_id);
-
-        set_vec4(shader, "color_override", blue);
-
-        scale_mat   := make_scale_matrix4(Vector3.{entity.scale, entity.scale, entity.scale});
-        rotation    := rotation_matrix(Matrix4, entity.orientation);
-        translation := make_translation_matrix4(entity.position);
-        model := translation * rotation * scale_mat;
-        set_mat4(shader, "model", model);
-
-        if entity.animation {
-            set_int(shader, "animated", 1);
-
-            // Pass Skinning Matrices
-            glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * entity.pose.skinning_matrices.count, entity.pose.skinning_matrices.data);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        }
-
-        draw_mesh(entity.mesh);
-
-        // Animation Debugging
-        if settings.skeleton_debug {
-            glDisable(GL_DEPTH_TEST);
-            draw_pose(entity.pose, model, pink);
-            glEnable(GL_DEPTH_TEST);
-        }
-    }
-    else {
-        log_error("Trying to draw entity % which has no mesh!\n", entity.name);
+    if !entity.mesh {
+        log_error("Heads up - you're calling draw on entity % which has no mesh!\n", entity.name);
     }
 
-    set_int(shader, "animated", 0);
+    bind_id := bind_texture(entity.mesh.texture.id);
+    set_int(shader, "diffuse_texture", bind_id);
+
+    set_vec4(shader, "color_override", blue);
+
+    model := generate_model_matrix(entity);
+    set_mat4(shader, "model", model);
+
+    if entity.animation {
+        set_int(shader, "animated", 1);
+
+        // Pass Skinning Matrices
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * entity.pose.skinning_matrices.count, entity.pose.skinning_matrices.data);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+
+    draw_mesh(entity.mesh);
+
+    // Cleanup
+    {
+        set_int(shader, "animated", 0);
+    }
+}
+
+// This is necessary since entities tend to have their "Position" be at the feet of the thing.
+// So this function gets you the real center of an object with regard to its mesh, etc.
+get_center_of_bounding_box :: (using entity : Entity) -> Vector3 {
+    box_center_relative_to_position := (bounding_box.max + bounding_box.min) / 2;
+
+    // Only need the y.
+    box_center_relative_to_position.x = 0;
+    box_center_relative_to_position.z = 0;
+
+    return position + box_center_relative_to_position;
 }
 
 draw_bounding_box :: (using entity : Entity, shader : Shader) {
-    box := calculate_bounding_box(entity);
+    box := *entity.bounding_box;
 
-    scale_vector := Vector3.{box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z} / 2.0;
-    box_center   := Vector3.{box.max.x + box.min.x, box.max.y + box.min.y, box.max.z + box.min.z} / 2.0;
+    scale_vector := (box.max - box.min) / 2.0;
+    box_center   := (box.max + box.min) / 2.0;
 
     scale_mat    := make_scale_matrix4(scale_vector);
     rotation     := Matrix4_Identity;

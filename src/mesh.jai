@@ -106,7 +106,8 @@ Joint :: struct
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// This function computes a minimum bounding box for a transformed mesh.
+// This function computes a minimum bounding box for a transformed (rotate / scale) mesh.
+// Translations are applied at later stages, since we want them to be relative to the entity this describes.
 find_extents :: (using mesh : Mesh, transform: Transform) -> low : Vector3, high : Vector3 {
     low : Vector3;
     high: Vector3;

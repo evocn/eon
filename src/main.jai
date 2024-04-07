@@ -8,7 +8,6 @@
     Working towards a 3D Game Prototype of the Dark Night of the Soul idea.
 
     Todo:
-    * Fix Culling Radius (just base it on bounding boxes! We're already generating these every damn frame... Always will work!)
     * Gameplay Prototype
     * Moon / Sun thing for shadows to come from
 
@@ -101,7 +100,7 @@ settings : struct {
     draw_bounding_boxes : bool;
     shadow_debug        : bool;
     skeleton_debug      : bool;
-    frustum_culling     : bool;
+    frustum_culling     : bool = true;
 
     DEFAULT_CAMERA_ORIGIN :: Vector3.{0, 1, 10};
     DEFAULT_CAMERA_ANGLES :: Vector3.{0, 0, 0};

@@ -28,7 +28,9 @@ render :: (game: Game) {
 
             //draw_grid();
 
-            if program_state.mode == .EDITOR {
+            if program_state.mode == .EDITOR ||
+               program_state.mode == .VIEW
+            {
                 render_editor_overlays(game);
             }
 
@@ -43,15 +45,15 @@ render :: (game: Game) {
     {
         // Draw Text
         glDisable(GL_DEPTH_TEST);
-        defer glEnable(GL_DEPTH_TEST);
-
         shader := use_text_shader();
-        defer disable_shaders();
-
-        font, found := table_find(*fonts, "Header");
-        for debug.lines {
-            draw_text(shader, font, it, 10, window_height - 10 - cast(float)(it_index + 1) * font.height, 1.0);
+        {
+            font, found := table_find(*fonts, "Header");
+            for debug.lines {
+                draw_text(shader, font, it, 10, window_height - 10 - cast(float)(it_index + 1) * font.height, 1.0);
+            }
         }
+        disable_shaders();
+        glEnable(GL_DEPTH_TEST);
     }
 
 
@@ -60,6 +62,22 @@ render :: (game: Game) {
     {
         if settings.shadow_debug {
             draw_buffer_to_the_screen(shadow_map.depth_buffer.buffer, 0, 0, xx (window_height / 4), xx (window_height / 4));
+        }
+
+
+        // Animation Debugging
+        if settings.skeleton_debug {
+            shader := use_basic_shader();
+            {
+                for entity : game.entities {
+                    model := generate_model_matrix(entity);
+
+                    glDisable(GL_DEPTH_TEST);
+                    draw_pose(entity.pose, model, pink);
+                    glEnable(GL_DEPTH_TEST);
+                }
+            }
+            disable_shaders();
         }
     }
 
@@ -71,10 +89,9 @@ render_scene :: (game: Game) {
 
     light_direction := Vector3.{-1, 1, -1};
 
+    // Draw Entities
     {
-        // Draw Entities
         shader := use_main_shader();
-        defer disable_shaders();
 
         set_vec3(shader, "light_direction", light_direction);
 
@@ -92,25 +109,25 @@ render_scene :: (game: Game) {
 
         screen_print(tprint("Drawn: %", entities_drawn));
     }
+    disable_shaders();
 
+    // Draw Plane
     {
-        // Draw Plane
         shader := use_main_shader();
-        defer disable_shaders();
 
         set_vec3(shader, "light_direction", light_direction);
 
         set_int(shader, "animated", 0);
         draw_ground_plane(10, shader);
     }
+    disable_shaders();
 
     // Draw Skybox
     {
         shader := use_skybox_shader();
-        defer disable_shaders();
-
         draw_skybox(shader);
     }
+    disable_shaders();
 }
 
 

@@ -43,6 +43,11 @@ Box :: struct {
     max := Vector3.{1, 1, 1};
 }
 
+// Returns the length from the middle of the box to its corner.
+extent :: (using box: Box) -> float {
+    return length(max - min) / 2;
+}
+
 intersection :: (ray : Ray, box : Box) -> bool, t: float {
     dirfrac : Vector3;
     dirfrac.x = 1.0 / ray.direction.x;
