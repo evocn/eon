@@ -13,11 +13,17 @@ Entity :: struct {
     using controller: Character_Controller; @NoSerialize
 
     mesh_name : string;
+    animation_name : string;
 
     bounding_radius : float = 2.0;
 
     // Non-serialized data.
-    mesh : *Mesh; @NoSerialize
+    mesh : *Mesh;               @NoSerialize
+
+    animation : *Sampled_Animation;  @NoSerialize
+    pose : Skeleton_Pose;       @NoSerialize
+    animation_time : float = 0; @NoSerialize
+    animation_speed_in_fps : float = 60; @NoSerialize
 }
 
 Entity_Kind :: enum {
@@ -28,6 +34,22 @@ Entity_Flags :: enum_flags {
 
 update :: (using entity : *Entity, delta_time : float) {
     //update_transforms_with_input(entity, delta_time);
+
+    if entity.animation {
+        reset_to_bind_pose(*pose);
+
+        animation_time += delta_time * animation_speed_in_fps;
+        sample_animation(
+            animation,
+            animation_time,
+            *pose,
+            .LINEAR
+        );
+
+        generate_skinning_matrices(*pose);
+
+        assert(pose.skinning_matrices.count <= MAX_JOINTS, "Skinning matrices array cannot have more than % elements for now.");
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -52,15 +74,13 @@ draw_entity :: (entity : Entity, shader : Shader) {
         model := translation * rotation * scale_mat;
         set_mat4(shader, "model", model);
 
-        // Pass Skinning Matrices
-        {
-            assert(pose.skinning_matrices.count <= MAX_JOINTS, "Skinning matrices array cannot have more than % elements for now.");
-
-            glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * pose.skinning_matrices.count, pose.skinning_matrices.data);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
+        if entity.animation {
             set_int(shader, "animated", 1);
+
+            // Pass Skinning Matrices
+            glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, size_of(Matrix4) * entity.pose.skinning_matrices.count, entity.pose.skinning_matrices.data);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
         }
 
         draw_mesh(entity.mesh);
@@ -68,13 +88,15 @@ draw_entity :: (entity : Entity, shader : Shader) {
         // Animation Debugging
         if settings.skeleton_debug {
             glDisable(GL_DEPTH_TEST);
-            draw_pose(pose, model, pink);
+            draw_pose(entity.pose, model, pink);
             glEnable(GL_DEPTH_TEST);
         }
     }
     else {
         log_error("Trying to draw entity % which has no mesh!\n", entity.name);
     }
+
+    set_int(shader, "animated", 0);
 }
 
 draw_bounding_box :: (using entity : Entity, shader : Shader) {
@@ -100,6 +122,15 @@ find_entity_mesh :: (using entity: *Entity) {
     if !found_mesh {
         log_error("Entity's mesh was not found: %.", mesh_name);
         mesh = null;
+    }
+}
+
+find_entity_animation :: (using entity: *Entity) {
+    found_anim : bool;
+    animation, found_anim = table_find(*animation_catalogue, animation_name);
+    if !found_anim {
+        log_error("Entity's anim was not found: %.", animation_name);
+        animation = null;
     }
 }
 

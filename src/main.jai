@@ -8,7 +8,6 @@
     Working towards a 3D Game Prototype of the Dark Night of the Soul idea.
 
     Todo:
-    * Model / Animation pipeline
     * Fix Culling Radius (just base it on bounding boxes! We're already generating these every damn frame... Always will work!)
     * Gameplay Prototype
     * Moon / Sun thing for shadows to come from
@@ -47,8 +46,9 @@ aspect_ratio := GAME_ASPECT_RATIO;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-entities_path :: "data";
-meshes_path :: "assets/meshes";
+entities_path   :: "data";
+meshes_path     :: "assets/meshes";
+animations_path :: "assets/animations";
 
 forever_pool: Flat_Pool;
 
@@ -57,6 +57,10 @@ entity_pool : Flat_Pool;
 mesh_pool   : Flat_Pool;
 mesh_storage: Bucket_Array(Mesh, 20);
 mesh_catalogue : Table(string, *Mesh);
+
+animation_pool   : Flat_Pool;
+animation_storage: Bucket_Array(Sampled_Animation, 20);
+animation_catalogue : Table(string, *Sampled_Animation);
 
 // @TODO: We should probably keep primitives like this one that we'll draw a lot in a structure together.
 quad : Quad;
@@ -96,10 +100,10 @@ settings : struct {
     line_mode           : bool;
     draw_bounding_boxes : bool;
     shadow_debug        : bool;
-    skeleton_debug      : bool = true;
+    skeleton_debug      : bool;
     frustum_culling     : bool;
 
-    DEFAULT_CAMERA_ORIGIN :: Vector3.{0, 10, 10};
+    DEFAULT_CAMERA_ORIGIN :: Vector3.{0, 1, 10};
     DEFAULT_CAMERA_ANGLES :: Vector3.{0, 0, 0};
 }
 
@@ -141,10 +145,6 @@ render_context : struct {
 
 ubo : GLuint;
 g_line_vao, g_line_vbo : GLuint;
-pose : Skeleton_Pose;
-anim : Sampled_Animation;
-animation_time : float;
-animation_speed_in_fps : float;
 
 main :: () {
     defer print("Program exited successfully.\n");
@@ -239,20 +239,6 @@ main :: () {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    // Animation Debugging
-    {
-        success := load_animation_from_file(*anim, "assets/animations/guy.night_anim");
-        assert(success);
-
-        animation_time = 0.0;
-        animation_speed_in_fps = 40.0;
-
-        mesh:, success = table_find(*mesh_catalogue, "guy");
-        assert(success);
-
-        pose = make_pose_for_skeleton(*mesh.skeleton);
-    }
-
     ////////////////////////////////////////////////////////////////////////////////
     // The Loop
 
@@ -278,12 +264,10 @@ main :: () {
         // Simulate
         {
             if !program_state.paused {
-                if program_state.mode == .GAME {
+                //if program_state.mode == .GAME {
                     simulate(*game, delta_time);
-                }
+                //}
             }
-
-            animation_time += delta_time * animation_speed_in_fps;
         }
 
         // Render

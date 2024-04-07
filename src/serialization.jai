@@ -45,8 +45,16 @@ load_entities :: (entities : *[..] *Entity, filename : string) -> success : bool
 
     //log(*log_serialization, "Loaded entities from \"%\".\n", filename);
 
-    for entities.* {
-        find_entity_mesh(it);
+    for entity : entities.* {
+        if entity.mesh_name {
+            find_entity_mesh(entity);
+        }
+
+        if entity.animation_name {
+            find_entity_animation(entity);
+
+            entity.pose = make_pose_for_skeleton(*entity.mesh.skeleton);
+        }
     }
 
     return true;

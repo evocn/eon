@@ -13,8 +13,7 @@ uniform vec3 light_direction;
 uniform sampler2D diffuse_texture;
 uniform sampler2D shadow_map;
 
-//
-//
+////////////////////////////////////////////////////////////////////////////////
 
 float calculate_shadow(vec4 light_space_position) {
     // perform perspective divide
@@ -28,6 +27,7 @@ float calculate_shadow(vec4 light_space_position) {
     float bias = 0.005;
 
     // Linear PCF
+    // @TODO: Do some noise here!
     float shadow = 0.0;
     vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
     for(int x = -1; x <= 1; ++x)
@@ -47,8 +47,7 @@ float calculate_shadow(vec4 light_space_position) {
     return shadow;
 }
 
-//
-//
+////////////////////////////////////////////////////////////////////////////////
 
 void main()
 {
@@ -60,9 +59,8 @@ void main()
     float shadow_amount = calculate_shadow(fragment_position_in_light_space);
 
     vec3 diffuse_color = base_color * diffuse_amount;
-    vec3 ambient_color = base_color * 0.5;
+    vec3 ambient_color = base_color * 0.3;
 
-/*
     FragColor.xyz = 
         (
             ambient_color + 
@@ -70,11 +68,12 @@ void main()
         )
         * (1.0 - shadow_amount)
     ;
-*/
 
-    FragColor.xyz = fragment_normal
-        //* (1.0 - shadow_amount)
-    ;
+    // Normals
+    //FragColor.xyz = fragment_normal;
+
+    // UVs
+    //FragColor.xy = texture_coordinates;
 
     FragColor.a = 1.0;
 }

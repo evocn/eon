@@ -131,7 +131,7 @@ settings_window :: () {
         ImGui.Checkbox("[B] Bounding Boxes",    *settings.draw_bounding_boxes);
         ImGui.Checkbox("[F] Frustum Culling",   *settings.frustum_culling);
         ImGui.Checkbox("[G] Shadow Debug",      *settings.shadow_debug);
-        ImGui.Checkbox("[K] Skeleton Debug",    *settings.skeleton_debug);
+        ImGui.Checkbox("[H] Skeleton Debug",    *settings.skeleton_debug);
     }
     ImGui.End();
 }

@@ -9,32 +9,16 @@ render :: (game: Game) {
     ////////////////////////////////////////////////////////////////////////////////
     // Shadow pass, drawing to the depth buffer.
     {
-        start_drawing_to_depth_buffer(shadow_map.depth_buffer);
-
         glCullFace(GL_FRONT);
-        glEnable(GL_CULL_FACE);
-        render_scene_to_depth_buffer(game);
-        glDisable(GL_CULL_FACE);
+        start_drawing_to_depth_buffer(shadow_map.depth_buffer);
         glCullFace(GL_BACK);
+
+        render_scene_to_depth_buffer(game);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
     // Main Pass
     {
-        {
-            reset_to_bind_pose(*pose);
-
-            sample_animation(
-                anim,
-                animation_time,
-                *pose,
-                .LINEAR
-            );
-
-            generate_skinning_matrices(*pose, transpose_result = false);
-        }
-
-
         start_drawing_to_framebuffer(framebuffer);
         {
             if settings.line_mode
@@ -42,14 +26,15 @@ render :: (game: Game) {
 
             render_scene(game);
 
+            //draw_grid();
+
             if program_state.mode == .EDITOR {
                 render_editor_overlays(game);
             }
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-            draw_grid();
         }
+
         draw_buffer_to_the_screen(framebuffer.color_buffer, 0, 0, xx window_width, xx window_height);
     }
 
@@ -119,7 +104,6 @@ render_scene :: (game: Game) {
         draw_ground_plane(10, shader);
     }
 
-    /*
     // Draw Skybox
     {
         shader := use_skybox_shader();
@@ -127,7 +111,6 @@ render_scene :: (game: Game) {
 
         draw_skybox(shader);
     }
-    */
 }
 
 

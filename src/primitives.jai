@@ -86,8 +86,8 @@ Quad :: struct {
                     ];
 
     indices:= u32.[
-                   0, 1, 2,
-                   0, 2, 3,
+                   0, 2, 1,
+                   0, 3, 2,
                   ];
 
     vao, vbo, ibo : GLuint;
@@ -134,7 +134,7 @@ draw_ground_plane :: (size: float, shader: Shader, height_offset := 0.0) {
     model := translate_matrix * rotate_matrix * scale_matrix;
     set_mat4(shader, "model", model);
 
-    set_vec4(shader, "color_override", pink);
+    set_vec4(shader, "color_override", yellow);
 
     draw_quad();
 }

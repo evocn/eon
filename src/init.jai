@@ -109,24 +109,33 @@ init :: () -> bool {
 
             mesh_catalogue.allocator = a;
 
-            new_mesh :: (name : string, $debug := false) {
-                if debug {
-                    print("\nLoading mesh from file with the name %\n\n", name);
-                }
-
-                mesh := create_mesh_from_night_mesh(tprint("%.night_mesh", name));
+            new_mesh :: (name : string) {
+                mesh := create_mesh_from_file(tprint("%.mesh", name));
                 locator, pointer := bucket_array_add(*mesh_storage, mesh);
                 table_add(*mesh_catalogue, name, pointer);
             }
 
-            new_mesh("test");
             new_mesh("guy");
+            new_mesh("porygon");
         }
 
 
+        // Animations
+        {
+            a: Allocator;
+            a.proc = flat_pool_allocator_proc;
+            a.data = *animation_pool;
 
-        // @TODO: Load Animations Here!
+            animation_catalogue.allocator = a;
 
+            new_animation :: (name : string) {
+                animation := create_animation_from_file(tprint("%.anim", name));
+                locator, pointer := bucket_array_add(*animation_storage, animation);
+                table_add(*animation_catalogue, name, pointer);
+            }
+
+            new_animation("animation");
+        }
 
 
         // Primitives

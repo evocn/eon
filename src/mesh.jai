@@ -172,7 +172,7 @@ init_mesh_rendering_objects :: (using mesh : *Mesh)
 ////////////////////////////////////////////////////////////////////////////////
 // Night Mesh
 
-create_mesh_from_night_mesh :: (filename : string) -> Mesh {
+create_mesh_from_file :: (filename : string) -> Mesh {
     a: Allocator;
     a.proc = flat_pool_allocator_proc;
     a.data = *mesh_pool;
@@ -182,16 +182,16 @@ create_mesh_from_night_mesh :: (filename : string) -> Mesh {
     mesh.vertices.allocator = a;
     mesh.joints.allocator = a;
 
-    success := load_night_mesh(tprint("%/%", meshes_path, filename), *mesh);
+    success := load_mesh_from_file(tprint("%/%", meshes_path, filename), *mesh);
     if !success {
-        log_error("Unable to load night_mesh file.\n");
+        log_error("Unable to load .mesh file.\n");
         return mesh;
     }
     init_mesh_rendering_objects(*mesh);
     return mesh;
 }
 
-load_night_mesh :: (full_path : string, mesh: *Mesh) -> bool {
+load_mesh_from_file :: (full_path : string, mesh: *Mesh) -> bool {
 
     parse_joint :: (handler : *Text_File_Handler, mesh : *Mesh, joint : *Joint) -> bool {
         name, ok := consume_next_line(handler);
