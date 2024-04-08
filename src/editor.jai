@@ -50,6 +50,8 @@ draw_all_windows :: (game: *Game) {
 
     shadow_frustum_window();
 
+    sun_window();
+
     camera_window();
 }
 
@@ -127,6 +129,7 @@ entities_window :: (entities : *[..] *Entity) {
 settings_window :: () {
     ImGui.Begin("Settings");
     {
+        ImGui.Checkbox("[T] Shadows",           *settings.shadows);
         ImGui.Checkbox("[L] Line Mode",         *settings.line_mode);
         ImGui.Checkbox("[B] Bounding Boxes",    *settings.draw_bounding_boxes);
         ImGui.Checkbox("[F] Frustum Culling",   *settings.frustum_culling);
@@ -169,7 +172,6 @@ shadow_frustum_window :: () {
     ImGui.Begin("Shadow Frustum");
     {
         orthographic_frustum_editor(*shadow_map.frustum);
-        ImGui.SliderFloat3("Origin", *shadow_map.light_position.component, -1.0, 1.0);
     }
     ImGui.End();
 }
@@ -181,8 +183,15 @@ orthographic_frustum_editor :: (frustum : *Orthographic_Frustum) {
     ImGui.SliderFloat("Height",  *frustum.height, 0.0, 100.0);
 }
 
-//
-//
+sun_window :: () {
+    ImGui.Begin("Sun");
+    {
+        ImGui.SliderFloat3("Position", *render_context.sun.position.component, -100.0, 100.0);
+    }
+    ImGui.End();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 debug_display_window :: () {
     ImGui.Begin("Debug Display");

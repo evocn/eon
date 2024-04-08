@@ -12,9 +12,19 @@ animation	# animation_name
 
 0	# kind
 0	# serial
+robot!	# name
+0	# flags
+-5 0 0	# position
+0 0 0 1	# orientation
+1.0	# scale
+rob	# mesh_name
+rob_idle	# animation_name
+
+0	# kind
+0	# serial
 gon_gon	# name
 0	# flags
-10 0 0	# position
+5 0 0	# position
 0 0 0 1	# orientation
 0.1	# scale
 porygon	# mesh_name

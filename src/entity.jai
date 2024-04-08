@@ -19,9 +19,11 @@ Entity :: struct {
     bounding_box : Box;         @NoSerialize
     mesh : *Mesh;               @NoSerialize
 
-    animation : *Sampled_Animation;  @NoSerialize
-    pose : Skeleton_Pose;       @NoSerialize
-    animation_time : float = 0; @NoSerialize
+    // @TODO: animation_manager struct!
+    animation : *Sampled_Animation;     @NoSerialize
+    pose : Skeleton_Pose;               @NoSerialize
+    animation_playing : bool = true;    @NoSerialize
+    animation_time : float;             @NoSerialize
     animation_speed_in_fps : float = 60; @NoSerialize
 }
 
@@ -43,13 +45,15 @@ update :: (using entity : *Entity, delta_time : float) {
     if entity.animation {
         reset_to_bind_pose(*pose);
 
-        animation_time += delta_time * animation_speed_in_fps;
-        sample_animation(
-            animation,
-            animation_time,
-            *pose,
-            .LINEAR
-        );
+        if animation_playing {
+            animation_time += delta_time * animation_speed_in_fps;
+            sample_animation(
+                animation,
+                animation_time,
+                *pose,
+                .LINEAR
+            );
+        }
 
         generate_skinning_matrices(*pose);
 
@@ -66,13 +70,6 @@ calculate_bounding_box :: (using entity : Entity) -> Box {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-generate_model_matrix :: (using entity: Entity) -> Matrix4 {
-    scale_mat   := make_scale_matrix4(Vector3.{entity.scale, entity.scale, entity.scale});
-    rotation    := rotation_matrix(Matrix4, entity.orientation);
-    translation := make_translation_matrix4(entity.position);
-    return translation * rotation * scale_mat;
-}
-
 draw_entity :: (entity : Entity, shader : Shader) {
     if !entity.mesh {
         log_error("Heads up - you're calling draw on entity % which has no mesh!\n", entity.name);
@@ -81,9 +78,9 @@ draw_entity :: (entity : Entity, shader : Shader) {
     bind_id := bind_texture(entity.mesh.texture.id);
     set_int(shader, "diffuse_texture", bind_id);
 
-    set_vec4(shader, "color_override", blue);
+    set_vec4(shader, "color_override", yellow);
 
-    model := generate_model_matrix(entity);
+    model := model_matrix(entity.transform);
     set_mat4(shader, "model", model);
 
     if entity.animation {

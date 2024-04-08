@@ -9,7 +9,7 @@
 
     Todo:
     * Gameplay Prototype
-    * Moon / Sun thing for shadows to come from
+    * Fix up shadow frustum generation, make it work with the sun, etc.
 
     * Heightmaps and Terrain
       * Maybe some LOD here with tessellation?
@@ -18,6 +18,11 @@
     * Distance Fog
       * Volumetric Fog?
     * Hair
+
+    Nice to have:
+    * Visualization of frustums
+    * Shadow Cascades
+    * A pony
 */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +69,7 @@ animation_catalogue : Table(string, *Sampled_Animation);
 // @TODO: We should probably keep primitives like this one that we'll draw a lot in a structure together.
 quad : Quad;
 cube : Cube;
+sphere : Sphere;
 
 fonts : Table(string, Font);
 
@@ -96,6 +102,7 @@ program_state : struct {
 }
 
 settings : struct {
+    shadows             : bool = false;
     line_mode           : bool;
     draw_bounding_boxes : bool;
     shadow_debug        : bool;
@@ -119,8 +126,6 @@ input: Input;
 //
 
 render_context : struct {
-
-
     using shaders : struct {
         basic_shader     : Shader;
         main_shader      : Shader;
@@ -136,6 +141,7 @@ render_context : struct {
 
     directional_light : Directional_Light = .{direction = Vector3.{y=-1}};
     skybox : Skybox;
+    sun : Celestial_Body;
 }
 
 
@@ -387,3 +393,5 @@ ImGui :: #import "ImGui";
 #load "skybox.jai";
 #load "shadow.jai";
 #load "water.jai";
+
+#load "celestial_body.jai";

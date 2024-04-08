@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 layout (location = 0) in vec3  VertexPosition;
 layout (location = 3) in vec4  VertexWeights;
 layout (location = 4) in ivec4 VertexJoints;

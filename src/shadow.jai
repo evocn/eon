@@ -10,11 +10,9 @@ shadow_map : Shadow_Map;
 Shadow_Map :: struct {
     depth_buffer : Depth_Buffer;
     frustum := Orthographic_Frustum.{near = 20.0, far = 20.0, width = 20.0, height = 20.0};
-    light_position := Vector3.{1.0, 1.0, 1.0};
 }
 
-//
-//
+////////////////////////////////////////////////////////////////////////////////
 
 init_rendering_objects :: (using shadow_map : *Shadow_Map) {
     depth_buffer.width  = SHADOW_MAP_SIZE;
@@ -27,5 +25,7 @@ get_shadow_map_projection_matrix :: (using shadow_map : Shadow_Map) -> Matrix4 {
 }
 
 get_shadow_map_view_matrix :: (using shadow_map : Shadow_Map) -> Matrix4 {
-    return make_look_at_matrix(light_position, Vector3.{0.0, 0.0, 0.0}, Vector3.{0.0, 1.0, 0.0});
+    light_position_normalized := get_light_direction(render_context.sun);
+
+    return make_look_at_matrix(.{1, 1, -1}, Vector3.{0.0, 0.0, 0.0}, Vector3.{0.0, 1.0, 0.0});
 }

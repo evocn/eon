@@ -9,6 +9,13 @@ Transform :: struct {
     scale           := 1.0;
 }
 
+model_matrix :: (using transform : Transform) -> Matrix4 {
+    scale_mat   := make_scale_matrix4(Vector3.{scale, scale, scale});
+    rotation    := rotation_matrix(Matrix4, orientation);
+    translation := make_translation_matrix4(position);
+    return translation * rotation * scale_mat;
+}
+
 Character_Controller :: struct {
     movement_speed : float = 1.0;
     rotation_speed : float = 0.3;

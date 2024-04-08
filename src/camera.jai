@@ -79,8 +79,9 @@ Camera_Flying :: struct {
     using #as camera: Camera;
     kind = .FLYING;
 
-    MOVEMENT_SPEED  :: 4.0;
-    FASTER_SPEED    :: 400.0;
+    MOVEMENT_SPEED  :: 10.0;
+    SLOWER_SPEED    :: 4.0;
+    FASTER_SPEED    :: 100.0;
     ROTATION_SPEED  :: 0.3;
     ROTATION_SMOOTHING :: 0.3;
 }
@@ -109,6 +110,7 @@ resolve_camera_flying_inputs :: (using camera_flying: *Camera_Flying, delta_time
     {
         move_speed = MOVEMENT_SPEED;
         if input.west.is_down then move_speed = FASTER_SPEED;
+        if input.east.is_down then move_speed = SLOWER_SPEED;
         move_input.x = cast(float)input.right.is_down - cast(float)input.left.is_down;
         move_input.y = cast(float)input.north.is_down - cast(float)input.south.is_down;
         move_input.z = cast(float)input.down.is_down - cast(float)input.up.is_down;
@@ -150,8 +152,9 @@ Camera_Walking :: struct {
     using #as camera: Camera;
     kind = .WALKING;
 
-    MOVEMENT_SPEED  :: 4.0;
-    FASTER_SPEED    :: 40.0;
+    MOVEMENT_SPEED  :: 10.0;
+    SLOWER_SPEED    :: 40.0;
+    FASTER_SPEED    :: 100.0;
     ROTATION_SPEED  :: 0.3;
     ROTATION_SMOOTHING :: 0.3;
 }
@@ -180,6 +183,7 @@ resolve_camera_walking_inputs :: (using camera_walking: *Camera_Walking, delta_t
     {
         move_speed = MOVEMENT_SPEED;
         if input.west.is_down then move_speed = FASTER_SPEED;
+        if input.east.is_down then move_speed = SLOWER_SPEED;
         move_input.x = cast(float)input.right.is_down - cast(float)input.left.is_down;
         move_input.z = cast(float)input.down.is_down  - cast(float)input.up.is_down;
 

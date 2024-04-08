@@ -78,9 +78,9 @@ handle_events_and_gather_input :: () {
                 else if event.key.keysym.sym == SDLK_d       release(*input.right);
 
                 else if event.key.keysym.sym == SDLK_LSHIFT  release(*input.west);
-                else if event.key.keysym.sym == SDLK_j       release(*input.south);
+                else if event.key.keysym.sym == SDLK_LCTRL   release(*input.east);
                 else if event.key.keysym.sym == SDLK_k       release(*input.north);
-                else if event.key.keysym.sym == SDLK_l       release(*input.east);
+                else if event.key.keysym.sym == SDLK_j       release(*input.south);
 
             case SDL_KEYDOWN;
                 if program_state.imgui_capturing_keyboard then continue;
@@ -90,24 +90,30 @@ handle_events_and_gather_input :: () {
                 }
 
                 // Settings
-                if event.key.keysym.sym == SDLK_l {
-                    settings.line_mode = !settings.line_mode;
-                }
+                {
+                    if event.key.keysym.sym == SDLK_t {
+                        settings.shadows = !settings.shadows;
+                    }
 
-                if event.key.keysym.sym == SDLK_f {
-                    settings.frustum_culling = !settings.frustum_culling;
-                }
+                    if event.key.keysym.sym == SDLK_l {
+                        settings.line_mode = !settings.line_mode;
+                    }
 
-                if event.key.keysym.sym == SDLK_b {
-                    settings.draw_bounding_boxes = !settings.draw_bounding_boxes;
-                }
+                    if event.key.keysym.sym == SDLK_f {
+                        settings.frustum_culling = !settings.frustum_culling;
+                    }
 
-                if event.key.keysym.sym == SDLK_g {
-                    settings.shadow_debug = !settings.shadow_debug;
-                }
+                    if event.key.keysym.sym == SDLK_b {
+                        settings.draw_bounding_boxes = !settings.draw_bounding_boxes;
+                    }
 
-                if event.key.keysym.sym == SDLK_h {
-                    settings.skeleton_debug = !settings.skeleton_debug;
+                    if event.key.keysym.sym == SDLK_g {
+                        settings.shadow_debug = !settings.shadow_debug;
+                    }
+
+                    if event.key.keysym.sym == SDLK_h {
+                        settings.skeleton_debug = !settings.skeleton_debug;
+                    }
                 }
 
                 if event.key.keysym.sym == SDLK_0 {
@@ -133,9 +139,9 @@ handle_events_and_gather_input :: () {
                     else if event.key.keysym.sym == SDLK_d       press(*input.right);
 
                     else if event.key.keysym.sym == SDLK_LSHIFT  press(*input.west);
-                    else if event.key.keysym.sym == SDLK_j       press(*input.south);
+                    else if event.key.keysym.sym == SDLK_LCTRL   press(*input.east);
                     else if event.key.keysym.sym == SDLK_k       press(*input.north);
-                    else if event.key.keysym.sym == SDLK_l       press(*input.east);
+                    else if event.key.keysym.sym == SDLK_j       press(*input.south);
 
                     else if event.key.keysym.sym == SDLK_SPACE   press(*input.start);
                     else if event.key.keysym.sym == SDLK_ESCAPE  press(*input.select);

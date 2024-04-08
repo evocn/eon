@@ -3,8 +3,12 @@
 // Alex Hartford
 // June 2023
 
+light_direction : Vector3;
+
 render :: (game: Game) {
     next_bind_id = 0;
+
+    light_direction = get_light_direction(render_context.sun);
 
     ////////////////////////////////////////////////////////////////////////////////
     // Shadow pass, drawing to the depth buffer.
@@ -13,7 +17,9 @@ render :: (game: Game) {
         start_drawing_to_depth_buffer(shadow_map.depth_buffer);
         glCullFace(GL_BACK);
 
-        render_scene_to_depth_buffer(game);
+        if settings.shadows {
+            render_scene_to_depth_buffer(game);
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -26,8 +32,6 @@ render :: (game: Game) {
 
             render_scene(game);
 
-            //draw_grid();
-
             if program_state.mode == .EDITOR ||
                program_state.mode == .VIEW
             {
@@ -35,6 +39,27 @@ render :: (game: Game) {
             }
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // Debug stuff to put in the framebuffer
+        {
+            // Animations
+            if settings.skeleton_debug {
+                shader := use_basic_shader();
+                {
+                    for entity : game.entities {
+                        model := model_matrix(entity.transform);
+
+                        glDisable(GL_DEPTH_TEST);
+                        draw_pose(entity.pose, model, pink);
+                        glEnable(GL_DEPTH_TEST);
+                    }
+                }
+                disable_shaders();
+            }
+
+            //draw_grid();
         }
 
         draw_buffer_to_the_screen(framebuffer.color_buffer, 0, 0, xx window_width, xx window_height);
@@ -58,26 +83,11 @@ render :: (game: Game) {
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    // Debug Stuff
+    // Debug Stuff to draw on top of all the framebuffers
     {
+        // Shadows
         if settings.shadow_debug {
             draw_buffer_to_the_screen(shadow_map.depth_buffer.buffer, 0, 0, xx (window_height / 4), xx (window_height / 4));
-        }
-
-
-        // Animation Debugging
-        if settings.skeleton_debug {
-            shader := use_basic_shader();
-            {
-                for entity : game.entities {
-                    model := generate_model_matrix(entity);
-
-                    glDisable(GL_DEPTH_TEST);
-                    draw_pose(entity.pose, model, pink);
-                    glEnable(GL_DEPTH_TEST);
-                }
-            }
-            disable_shaders();
         }
     }
 
@@ -86,8 +96,6 @@ render :: (game: Game) {
 
 render_scene :: (game: Game) {
     view_frustum := calculate_view_frustum(program_state.camera.projection, program_state.camera.view);
-
-    light_direction := Vector3.{-1, 1, -1};
 
     // Draw Entities
     {
@@ -108,8 +116,9 @@ render_scene :: (game: Game) {
         }
 
         screen_print(tprint("Drawn: %", entities_drawn));
+
+        disable_shaders();
     }
-    disable_shaders();
 
     // Draw Plane
     {
@@ -117,17 +126,28 @@ render_scene :: (game: Game) {
 
         set_vec3(shader, "light_direction", light_direction);
 
-        set_int(shader, "animated", 0);
         draw_ground_plane(10, shader);
+
+        disable_shaders();
     }
-    disable_shaders();
+
+    // Spheres!
+    {
+        shader := use_basic_shader();
+
+        draw(render_context.sun, shader);
+
+        disable_shaders();
+    }
 
     // Draw Skybox
     {
         shader := use_skybox_shader();
+
         draw_skybox(shader);
+
+        disable_shaders();
     }
-    disable_shaders();
 }
 
 

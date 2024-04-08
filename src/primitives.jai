@@ -3,8 +3,26 @@
 // Alex Hartford
 // June 2023
 
+////////////////////////////////////////////////////////////////////////////////
+// Sphere
+
+Sphere :: struct {
+    mesh : Mesh;
+}
+
+init_sphere_rendering_objects :: (using sphere: *Sphere) {
+    mesh = create_mesh_from_file("sphere.mesh");
+}
+
+draw_sphere :: ()
+{
+    using sphere;
+
+    draw_mesh(sphere.mesh);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Cube
-//
 
 Cube :: struct {
     vertices := float.[
@@ -49,7 +67,8 @@ Cube :: struct {
      1.0, -1.0, -1.0,
     -1.0, -1.0,  1.0,
      1.0, -1.0,  1.0
-     ];
+    ];
+
     vao, vbo : GLuint;
 }
 
@@ -73,9 +92,8 @@ draw_cube :: ()
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 // Quads
-//
 
 Quad :: struct {
     points := float.[
@@ -127,10 +145,13 @@ draw_quad :: () {
 
 draw_ground_plane :: (size: float, shader: Shader, height_offset := 0.0) {
     scale_matrix     := make_scale_matrix4(Vector3.{size, size, 1});
-    rotation_quat : Quaternion;
+
+    rotation_quat: Quaternion;
     set_from_axis_and_angle(*rotation_quat, .{1, 0, 0}, radians(-90));
     rotate_matrix    := rotation_matrix(Matrix4, rotation_quat);
+
     translate_matrix := make_translation_matrix4(.{0, height_offset, 0});
+
     model := translate_matrix * rotate_matrix * scale_matrix;
     set_mat4(shader, "model", model);
 
@@ -139,13 +160,11 @@ draw_ground_plane :: (size: float, shader: Shader, height_offset := 0.0) {
     draw_quad();
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
 // Lines
-//
 
-// @NOTE: These lines cannot add more members after being initialized.
-// @TODO: Create a more robust solution.
+// @TODO: These lines cannot add more members after being initialized.
+// We probably want a solution where you keep updating them, moving stuff around, etc.
 Line :: struct {
     points: [..] Vector3;
     vao, vbo : GLuint;

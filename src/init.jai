@@ -116,6 +116,7 @@ init :: () -> bool {
             }
 
             new_mesh("guy");
+            new_mesh("rob");
             new_mesh("porygon");
         }
 
@@ -135,12 +136,14 @@ init :: () -> bool {
             }
 
             new_animation("animation");
+            new_animation("rob_idle");
         }
 
 
         // Primitives
         init_quad_rendering_objects(*quad);
         init_cube_rendering_objects(*cube);
+        init_sphere_rendering_objects(*sphere);
 
         // Fonts
         {
@@ -158,6 +161,8 @@ init :: () -> bool {
 
         // Rendering Structures
         load_cubemap_textures(*render_context.skybox, "black");
+
+        render_context.sun.position = Vector3.{0, 10, 0};
 
         init_rendering_objects(*shadow_map);
         init_rendering_objects(*framebuffer);

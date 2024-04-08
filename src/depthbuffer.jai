@@ -14,7 +14,7 @@ Depth_Buffer :: struct {
 start_drawing_to_depth_buffer :: (using depth_buffer : Depth_Buffer) {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glViewport(0, 0, width, height);
-    glClearColor(0.0, 1.0, 0.0, 1.0);
+    glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
