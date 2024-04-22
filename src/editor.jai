@@ -39,7 +39,10 @@ update_and_draw_editor :: (game: *Game) {
 draw_all_windows :: (game: *Game) {
     entities_window(*game.entities);
     if editor.selected_entity != -1 {
-        entity_window(game.entities[editor.selected_entity], *game.entities);
+        entity := game.entities[editor.selected_entity];
+        entity_window(entity, *game.entities);
+
+        animation_controller_window(*entity.animation_controller);
     }
 
     settings_window();
@@ -53,6 +56,8 @@ draw_all_windows :: (game: *Game) {
     sun_window();
 
     camera_window();
+
+    //ImGui.ShowDemoWindow();
 }
 
 camera_window :: () {
@@ -93,12 +98,34 @@ entity_window :: (using entity: *Entity, entities : *[..] *Entity) {
             return;
         }
 
+        ImGui.Text("Meshes:");
         for mesh_catalogue {
             if ImGui.Selectable(to_c_string(tprint("%", it_index)), entities.*[editor.selected_entity].mesh_name == it_index) {
                 entities.*[editor.selected_entity].mesh_name = it_index;
                 find_entity_mesh(entities.*[editor.selected_entity]);
             }
         }
+
+        ImGui.Text("Animations:");
+        for animation_catalogue {
+            if ImGui.Selectable(to_c_string(tprint("%", it_index)), entities.*[editor.selected_entity].animation_name == it_index) {
+                entities.*[editor.selected_entity].animation_name = it_index;
+                find_entity_animation(entities.*[editor.selected_entity]);
+            }
+        }
+    }
+    ImGui.End();
+}
+
+animation_controller_window :: (using animation_controller : *Animation_Controller) {
+    ImGui.Begin("Animation Controller");
+    {
+        ImGui.Text("%", animation.name);
+        ImGui.Checkbox("Pause", *paused);
+        time_in_samples := fmod_cycling(time, cast(float)animation.sample_count);
+        fraction := time_in_samples / animation.sample_count;
+        ImGui.ProgressBar(fraction);
+        ImGui.SliderFloat("Speed (FPS)", *speed_in_fps, -200.0, 200.0);
     }
     ImGui.End();
 }
@@ -131,9 +158,10 @@ settings_window :: () {
     {
         ImGui.Checkbox("[T] Shadows",           *settings.shadows);
         ImGui.Checkbox("[L] Line Mode",         *settings.line_mode);
+        ImGui.Checkbox("[N] Normals Mode",      *settings.normals_mode);
         ImGui.Checkbox("[B] Bounding Boxes",    *settings.draw_bounding_boxes);
         ImGui.Checkbox("[F] Frustum Culling",   *settings.frustum_culling);
-        ImGui.Checkbox("[G] Shadow Debug",      *settings.shadow_debug);
+        ImGui.Checkbox("[G] Framebuffer Debug", *settings.framebuffer_debug);
         ImGui.Checkbox("[H] Skeleton Debug",    *settings.skeleton_debug);
     }
     ImGui.End();

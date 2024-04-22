@@ -10,7 +10,7 @@ MAX_JOINTS :: 100;
 Mesh :: struct {
     vertices : [..] Vertex;
     indices  : [..] u32;
-    vao, vbo, ibo : GLuint;
+    vao, vbo, ebo : GLuint;
 
     texture : Texture;
 
@@ -134,7 +134,7 @@ draw_mesh :: (using mesh : Mesh)
 {
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
     glDrawElements(GL_TRIANGLES, cast(u32)indices.count, GL_UNSIGNED_INT, null);
 }
@@ -143,13 +143,14 @@ init_mesh_rendering_objects :: (using mesh : *Mesh)
 {
     glGenVertexArrays(1, *vao);
     glGenBuffers(1, *vbo);
-    glGenBuffers(1, *ibo);
+    glGenBuffers(1, *ebo);
+
     glBindVertexArray(vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, size_of(Vertex) * vertices.count, vertices.data, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size_of(u32) * indices.count, indices.data, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0); // Position

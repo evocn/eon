@@ -85,14 +85,15 @@ init :: () -> bool {
         // Shaders
         render_context.basic_shader     = make_shader("basic.vs", "basic.fs");
         render_context.main_shader      = make_shader("main.vs", "main.fs");
+        render_context.terrain_shader   = make_shader("terrain.vs", "terrain.fs");
         render_context.skybox_shader    = make_shader("skybox.vs", "skybox.fs");
-
-        render_context.screen_shader    = make_shader("screen.vs", "texture.fs");
-        render_context.text_shader      = make_shader("text.vs", "text.fs");
+        render_context.highlight_shader = make_shader("main.vs", "highlight.fs");
 
         render_context.depth_shader     = make_shader("depth.vs", "depth.fs");
 
-        render_context.highlight_shader = make_shader("main.vs", "highlight.fs");
+        render_context.text_shader      = make_shader("text.vs", "text.fs");
+        render_context.screen_shader    = make_shader("screen.vs", "screen.fs");
+        render_context.post_processing_shader = make_shader("screen.vs", "post_processing.fs");
 
         // Rendering Setup
         {
@@ -116,6 +117,7 @@ init :: () -> bool {
             }
 
             new_mesh("guy");
+            new_mesh("guy2");
             new_mesh("rob");
             new_mesh("porygon");
         }
@@ -137,6 +139,8 @@ init :: () -> bool {
 
             new_animation("animation");
             new_animation("rob_idle");
+            new_animation("sit");
+            new_animation("idle");
         }
 
 
@@ -160,9 +164,10 @@ init :: () -> bool {
         }
 
         // Rendering Structures
-        load_cubemap_textures(*render_context.skybox, "black");
+        load_cubemap_textures(*render_context.skybox, "yellow");
 
-        render_context.sun.position = Vector3.{0, 10, 0};
+        render_context.sun.position = Vector3.{0, 400, 400};
+        render_context.sun.scale = 100;
 
         init_rendering_objects(*shadow_map);
         init_rendering_objects(*framebuffer);

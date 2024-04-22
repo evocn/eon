@@ -8,21 +8,20 @@
     Working towards a 3D Game Prototype of the Dark Night of the Soul idea.
 
     Todo:
-    * Gameplay Prototype
+    * Multiple animations per entity, more developed animation controller system for movie.
     * Fix up shadow frustum generation, make it work with the sun, etc.
-
-    * Heightmaps and Terrain
-      * Maybe some LOD here with tessellation?
-
+    * Fix up bounding box generation ( Should be able to just make a big approximation and call it a day.)
     * Water
     * Distance Fog
-      * Volumetric Fog?
+
     * Hair
 
     Nice to have:
     * Visualization of frustums
     * Shadow Cascades
-    * A pony
+    * Heightmap LOD with tessellation.
+      * Kriging system?
+    * Volumetric Fog?
 */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +52,7 @@ aspect_ratio := GAME_ASPECT_RATIO;
 entities_path   :: "data";
 meshes_path     :: "assets/meshes";
 animations_path :: "assets/animations";
+heightmaps_path :: "assets/heightmaps";
 
 forever_pool: Flat_Pool;
 
@@ -102,10 +102,11 @@ program_state : struct {
 }
 
 settings : struct {
-    shadows             : bool = false;
+    shadows             : bool = true;
     line_mode           : bool;
+    normals_mode        : bool;
     draw_bounding_boxes : bool;
-    shadow_debug        : bool;
+    framebuffer_debug   : bool;
     skeleton_debug      : bool;
     frustum_culling     : bool = true;
 
@@ -118,8 +119,6 @@ editor : struct {
     selected_mesh := "";
 }
 
-game : Game;
-
 input: Input;
 
 // Render-Level State
@@ -129,14 +128,15 @@ render_context : struct {
     using shaders : struct {
         basic_shader     : Shader;
         main_shader      : Shader;
+        terrain_shader   : Shader;
         skybox_shader    : Shader;
-
-        screen_shader    : Shader;
-        text_shader      : Shader;
+        highlight_shader : Shader;
 
         depth_shader     : Shader;
 
-        highlight_shader : Shader;
+        text_shader      : Shader;
+        screen_shader    : Shader;
+        post_processing_shader : Shader;
     }
 
     directional_light : Directional_Light = .{direction = Vector3.{y=-1}};
@@ -199,8 +199,17 @@ main :: () {
     game : Game;
 
     {
-        success := load_entities(*game.entities, program_state.current_level_name);
-        assert(success);
+        // Load Entities from the entities file.
+        {
+            success := load_entities(*game.entities, program_state.current_level_name);
+            assert(success);
+        }
+
+        // Load Heightmap from a file.
+        {
+            success := load_terrain_from_heightmap_file(*game.terrain, "lake.png");
+            assert(success);
+        }
     }
 
     // Create uniform buffer object
@@ -231,16 +240,14 @@ main :: () {
         glGenVertexArrays (1, *g_line_vao);
         glBindVertexArray (g_line_vao);
 
-        glGenBuffers (1, *g_line_vbo);
-        glBindBuffer (GL_ARRAY_BUFFER, g_line_vbo);
-        glBufferData (GL_ARRAY_BUFFER, size_of (Vertex_Pos_Color) * 2, null, GL_DYNAMIC_DRAW);
+        glGenBuffers(1, *g_line_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, g_line_vbo);
+        glBufferData(GL_ARRAY_BUFFER, size_of(Vector3) * 2, null, GL_DYNAMIC_DRAW);
 
-        glEnableVertexAttribArray (0);
-        glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, size_of(Vertex_Pos_Color), cast (*void) 0);
-        glEnableVertexAttribArray (1);
-        glVertexAttribPointer (1, 4, GL_FLOAT, GL_FALSE, size_of(Vertex_Pos_Color), cast (*void) size_of (Vector3));
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, size_of(Vector3), cast(*void)0);
 
-        glBindVertexArray (0);
+        glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
@@ -343,7 +350,9 @@ using Basic :: #import "Basic"()(MEMORY_DEBUGGER=DEBUG_MEMORY);
 #import "File";
 #import "Text_File_Handler";
 
+STBI_ONLY_PNG :: 1; // @TODO: Make sure this works!
 #import "stb_image";
+
 #import "freetype255";
 
 #import "SDL";
@@ -379,7 +388,9 @@ ImGui :: #import "ImGui";
 #load "primitives.jai";
 #load "parse_utils.jai";
 #load "mesh.jai";
+
 #load "animation.jai";
+#load "animation_controller.jai";
 
 #load "color.jai";
 #load "light.jai";
@@ -395,3 +406,4 @@ ImGui :: #import "ImGui";
 #load "water.jai";
 
 #load "celestial_body.jai";
+#load "terrain.jai";

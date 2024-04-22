@@ -8,4 +8,6 @@ Game :: struct {
     DEFAULT_CAMERA_ANGLES :: Vector3.{0, 0, 0};
 
     entities : [..] *Entity;
+
+    terrain : Terrain;
 }

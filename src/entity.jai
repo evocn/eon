@@ -10,7 +10,6 @@ Entity :: struct {
     flags : Entity_Flags;
 
     using transform : Transform;
-    using controller: Character_Controller; @NoSerialize
 
     mesh_name : string;
     animation_name : string;
@@ -19,12 +18,8 @@ Entity :: struct {
     bounding_box : Box;         @NoSerialize
     mesh : *Mesh;               @NoSerialize
 
-    // @TODO: animation_manager struct!
-    animation : *Sampled_Animation;     @NoSerialize
-    pose : Skeleton_Pose;               @NoSerialize
-    animation_playing : bool = true;    @NoSerialize
-    animation_time : float;             @NoSerialize
-    animation_speed_in_fps : float = 60; @NoSerialize
+    using character_controller : Character_Controller; @NoSerialize
+    using animation_controller : Animation_Controller; @NoSerialize
 }
 
 Entity_Kind :: enum {
@@ -42,22 +37,8 @@ update :: (using entity : *Entity, delta_time : float) {
     }
 
     // Update Animation
-    if entity.animation {
-        reset_to_bind_pose(*pose);
-
-        if animation_playing {
-            animation_time += delta_time * animation_speed_in_fps;
-            sample_animation(
-                animation,
-                animation_time,
-                *pose,
-                .LINEAR
-            );
-        }
-
-        generate_skinning_matrices(*pose);
-
-        assert(pose.skinning_matrices.count <= MAX_JOINTS, "Skinning matrices array cannot have more than % elements for now.");
+    if entity.animation_name {
+        update(*entity.animation_controller, delta_time);
     }
 }
 
@@ -78,12 +59,12 @@ draw_entity :: (entity : Entity, shader : Shader) {
     bind_id := bind_texture(entity.mesh.texture.id);
     set_int(shader, "diffuse_texture", bind_id);
 
-    set_vec4(shader, "color_override", yellow);
+    set_vec4(shader, "color_override", red);
 
     model := model_matrix(entity.transform);
     set_mat4(shader, "model", model);
 
-    if entity.animation {
+    if entity.animation_name {
         set_int(shader, "animated", 1);
 
         // Pass Skinning Matrices

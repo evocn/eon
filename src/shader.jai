@@ -39,6 +39,22 @@ use_main_shader :: () -> Shader {
     return shader;
 }
 
+use_terrain_shader :: () -> Shader {
+    shader := render_context.terrain_shader;
+    use_shader(shader);
+
+    set_mat4(shader, "projection", program_state.camera.projection);
+    set_mat4(shader, "view", program_state.camera.view);
+
+    light_space_matrix := get_shadow_map_projection_matrix(shadow_map) * get_shadow_map_view_matrix(shadow_map);
+    set_mat4(shader, "light_space_matrix", light_space_matrix);
+
+    bind_id := bind_texture(shadow_map.depth_buffer.buffer);
+    set_int(shader, "shadow_map", bind_id);
+
+    return shader;
+}
+
 use_highlight_shader :: () -> Shader {
     shader := render_context.highlight_shader;
     use_shader(shader);
@@ -130,6 +146,9 @@ set_vec4 :: (shader : Shader, name: string, value: Vector4) {
 }
 set_mat4 :: (shader : Shader, name: string, value: Matrix4) {
     glUniformMatrix4fv(glGetUniformLocation(shader, name.data), 1, GL_TRUE, *value.coef[0][0]);
+}
+set_texture :: (shader : Shader, name: string, location: int) {
+    glUniform1i(glGetUniformLocation(shader, name.data), cast(GLint)location);
 }
 
 #scope_file

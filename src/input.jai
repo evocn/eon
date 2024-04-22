@@ -99,6 +99,10 @@ handle_events_and_gather_input :: () {
                         settings.line_mode = !settings.line_mode;
                     }
 
+                    if event.key.keysym.sym == SDLK_n {
+                        settings.normals_mode = !settings.normals_mode;
+                    }
+
                     if event.key.keysym.sym == SDLK_f {
                         settings.frustum_culling = !settings.frustum_culling;
                     }
@@ -108,7 +112,7 @@ handle_events_and_gather_input :: () {
                     }
 
                     if event.key.keysym.sym == SDLK_g {
-                        settings.shadow_debug = !settings.shadow_debug;
+                        settings.framebuffer_debug = !settings.framebuffer_debug;
                     }
 
                     if event.key.keysym.sym == SDLK_h {

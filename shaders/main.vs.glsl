@@ -1,3 +1,8 @@
+// Everett
+// Main VS
+// Alex Hartford
+// April 2024
+
 #version 460 core
 
 layout (location = 0) in vec3  VertexPosition;
@@ -67,8 +72,6 @@ void main() {
 
     texture_coordinates = VertexUV;
     fragment_position_in_light_space = light_space_matrix * vec4(model_space_position, 1.0);
-/*
     fragment_position   = model_space_position; // @TODO: Unsure if this is right...
-*/
     fragment_normal     = model_space_normal;
 }

@@ -1,4 +1,4 @@
 @echo off
 start remedybg bin\everett.rdbg
-start gvim build.jai
+start gvim src/main.jai
 start wt.exe -d %~dp0

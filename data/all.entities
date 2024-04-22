@@ -7,7 +7,7 @@ dude	# name
 0 0 0	# position
 0 0 0 1	# orientation
 0.1	# scale
-guy	# mesh_name
+guy	    # mesh_name
 animation	# animation_name
 
 0	# kind

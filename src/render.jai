@@ -13,9 +13,7 @@ render :: (game: Game) {
     ////////////////////////////////////////////////////////////////////////////////
     // Shadow pass, drawing to the depth buffer.
     {
-        glCullFace(GL_FRONT);
         start_drawing_to_depth_buffer(shadow_map.depth_buffer);
-        glCullFace(GL_BACK);
 
         if settings.shadows {
             render_scene_to_depth_buffer(game);
@@ -27,8 +25,10 @@ render :: (game: Game) {
     {
         start_drawing_to_framebuffer(framebuffer);
         {
-            if settings.line_mode
+            if settings.line_mode {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            }
+            defer glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
             render_scene(game);
 
@@ -38,31 +38,30 @@ render :: (game: Game) {
                 render_editor_overlays(game);
             }
 
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
         ////////////////////////////////////////////////////////////////////////////////
-        // Debug stuff to put in the framebuffer
+        // Debug stuff to put in the scene
         {
             // Animations
             if settings.skeleton_debug {
                 shader := use_basic_shader();
-                {
-                    for entity : game.entities {
-                        model := model_matrix(entity.transform);
+                defer disable_shaders();
 
-                        glDisable(GL_DEPTH_TEST);
-                        draw_pose(entity.pose, model, pink);
-                        glEnable(GL_DEPTH_TEST);
-                    }
+                for entity : game.entities {
+                    model := model_matrix(entity.transform);
+
+                    glDisable(GL_DEPTH_TEST);
+                    defer glEnable(GL_DEPTH_TEST);
+
+                    draw_pose(entity.pose, model, pink);
                 }
-                disable_shaders();
             }
 
-            //draw_grid();
+            draw_grid();
         }
 
-        draw_buffer_to_the_screen(framebuffer.color_buffer, 0, 0, xx window_width, xx window_height);
+        draw_framebuffer_to_screen_with_post_processing(framebuffer);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -70,15 +69,16 @@ render :: (game: Game) {
     {
         // Draw Text
         glDisable(GL_DEPTH_TEST);
+        defer glEnable(GL_DEPTH_TEST);
+
         shader := use_text_shader();
+        defer disable_shaders();
         {
             font, found := table_find(*fonts, "Header");
             for debug.lines {
                 draw_text(shader, font, it, 10, window_height - 10 - cast(float)(it_index + 1) * font.height, 1.0);
             }
         }
-        disable_shaders();
-        glEnable(GL_DEPTH_TEST);
     }
 
 
@@ -86,8 +86,11 @@ render :: (game: Game) {
     // Debug Stuff to draw on top of all the framebuffers
     {
         // Shadows
-        if settings.shadow_debug {
-            draw_buffer_to_the_screen(shadow_map.depth_buffer.buffer, 0, 0, xx (window_height / 4), xx (window_height / 4));
+        if settings.framebuffer_debug {
+
+            draw_buffer_to_the_screen(shadow_map.depth_buffer.buffer, 0, 0, xx (window_height / 3), xx (window_height / 3));
+
+            draw_buffer_to_the_screen(framebuffer.depth_buffer, xx (window_width / 3), 0, xx (window_width / 3), xx (window_height / 3));
         }
     }
 
@@ -100,8 +103,11 @@ render_scene :: (game: Game) {
     // Draw Entities
     {
         shader := use_main_shader();
+        defer disable_shaders();
 
         set_vec3(shader, "light_direction", light_direction);
+
+        set_int(shader, "normals_mode", xx settings.normals_mode);
 
         entities_drawn := 0;
         for entity : game.entities {
@@ -116,46 +122,42 @@ render_scene :: (game: Game) {
         }
 
         screen_print(tprint("Drawn: %", entities_drawn));
-
-        disable_shaders();
     }
 
-    // Draw Plane
+    // Draw Terrain
     {
-        shader := use_main_shader();
+        shader := use_terrain_shader();
+        defer disable_shaders();
 
         set_vec3(shader, "light_direction", light_direction);
 
-        draw_ground_plane(10, shader);
+        set_int(shader, "normals_mode", xx settings.normals_mode);
 
-        disable_shaders();
+        draw_terrain(game.terrain, shader);
     }
 
-    // Spheres!
+    // Celestial Bodies
     {
         shader := use_basic_shader();
+        defer disable_shaders();
 
         draw(render_context.sun, shader);
-
-        disable_shaders();
     }
 
     // Draw Skybox
     {
         shader := use_skybox_shader();
+        defer disable_shaders();
 
         draw_skybox(shader);
-
-        disable_shaders();
     }
 }
 
 
 
 render_scene_to_depth_buffer :: (game: Game) {
+    // Draw Entities
     {
-        // Draw Entities
-
         shader := use_depth_shader();
         defer disable_shaders();
 
@@ -164,13 +166,12 @@ render_scene_to_depth_buffer :: (game: Game) {
         }
     }
 
+    // Draw Terrain
     {
-        // Draw Plane
-
         shader := use_depth_shader();
         defer disable_shaders();
 
-        draw_ground_plane(10, shader);
+        draw_terrain(game.terrain, shader);
     }
 }
 
@@ -205,9 +206,9 @@ render_editor_overlays :: (game: Game) {
 draw_grid :: () {
     // Draw grid
     for i : -10..10
-        draw_line (xyz (xx i, 0, -10), xyz (xx i, 0, 10), .{0.4, 0.4, 0.4, 1});
+        draw_line(xyz (xx i, 0, -10), xyz (xx i, 0, 10), black);
     for i : -10..10
-        draw_line (xyz (-10, 0, xx i), xyz (10, 0, xx i), .{0.4, 0.4, 0.4, 1});
+        draw_line(xyz (-10, 0, xx i), xyz (10, 0, xx i), black);
 
     glLineWidth(10);
         // Draw coordinate axes
@@ -243,36 +244,23 @@ draw_pose :: (pose : Skeleton_Pose, overall_offset_transform : Matrix4, color : 
     }
 }
 
-// Used for line rendering
-Vertex_Pos_Color :: struct
-{
-    position : Vector3;
-    color : Vector4;
-}
-
-draw_line :: inline (start : Vector3, end : Vector3, color : Vector4)
-{
-    draw_line (start, end, color, color);
-}
-
 // This is maybe the slowest way possible to draw a line!
-draw_line :: (start : Vector3, end : Vector3, start_color : Vector4, end_color : Vector4)
+draw_line :: (start : Vector3, end : Vector3, color : Vector4)
 {
-    data : [2]Vertex_Pos_Color = ---;
-    data[0].position = start;
-    data[0].color    = start_color;
-    data[1].position = end;
-    data[1].color    = end_color;
+    data : [2]Vector3 = ---;
+    data[0] = start;
+    data[1] = end;
 
-    glBindVertexArray (g_line_vao);
-    glBindBuffer (GL_ARRAY_BUFFER, g_line_vbo);
+    glBindVertexArray(g_line_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_line_vbo);
     // Fill the vertex buffer with our two line vertices
-    glBufferSubData (GL_ARRAY_BUFFER, 0, size_of (Vertex_Pos_Color) * 2, data.data);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size_of(Vector3) * 2, data.data);
 
     shader := use_basic_shader();
     {
         model := Matrix4_Identity;
         set_mat4(shader, "model", model);
+        set_vec4(shader, "color", color);
         glDrawArrays(GL_LINES, 0, 2);
     }
 }

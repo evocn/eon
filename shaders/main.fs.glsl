@@ -1,10 +1,20 @@
+// Everett
+// Main FS
+// Alex Hartford
+// June 2023
+
 #version 460 core
+
 out vec4 FragColor;
+
+////////////////////////////////////////////////////////////////////////////////
 
 in vec3 fragment_position;
 in vec3 fragment_normal;
 in vec2 texture_coordinates;
 in vec4 fragment_position_in_light_space;
+
+////////////////////////////////////////////////////////////////////////////////
 
 uniform vec4 color_override;
 
@@ -12,6 +22,8 @@ uniform vec3 light_direction;
 
 uniform sampler2D diffuse_texture;
 uniform sampler2D shadow_map;
+
+uniform int normals_mode;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -70,7 +82,9 @@ void main()
     ;
 
     // Normals
-    //FragColor.xyz = fragment_normal;
+    if (normals_mode != 0) {
+        FragColor.xyz = fragment_normal;
+    }
 
     // UVs
     //FragColor.xy = texture_coordinates;
