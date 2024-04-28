@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Camera
 // Alex Hartford
 // March 2024
@@ -153,7 +153,7 @@ Camera_Walking :: struct {
     kind = .WALKING;
 
     MOVEMENT_SPEED  :: 10.0;
-    SLOWER_SPEED    :: 40.0;
+    SLOWER_SPEED    :: 4.0;
     FASTER_SPEED    :: 100.0;
     ROTATION_SPEED  :: 0.3;
     ROTATION_SMOOTHING :: 0.3;
@@ -219,4 +219,13 @@ resolve_camera_walking_inputs :: (using camera_walking: *Camera_Walking, delta_t
 
     aspect_ratio := window_width / cast(float)window_height;
     projection = make_projection_matrix(radians(fov), aspect_ratio, 1.0, 1000.0);
+}
+
+// Polar coordinate transform from pitch/yaw to a Cartesian vector
+polar_to_vector :: (pitch : float, yaw : float) -> Vector3 {
+    result : Vector3;
+    result.x = cos(radians(yaw)) * cos(radians(pitch));
+    result.y = sin(radians(pitch));
+    result.z = sin(radians(yaw)) * cos(radians(pitch));
+    return result;
 }

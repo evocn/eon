@@ -1,3 +1,8 @@
+// Eon
+// Text VS
+// Alex Hartford
+// April 2024
+
 #version 460 core
 layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
 

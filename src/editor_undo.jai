@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Editor Undo System
 // Alex Hartford
 // April 2024

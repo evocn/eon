@@ -1,6 +1,6 @@
-// Alex Hartford
-// Everett
+// Eon
 // Frustum
+// Alex Hartford
 // April 2024
 
 Orthographic_Frustum :: struct {

@@ -1,10 +1,9 @@
-// Everett
+// Eon
 // Fog
 // Alex Hartford
 // March 2024
 
 Fog :: struct {
-    max_distance : float;
-    min_distance : float;
-    color : Vector3;
+    color : Vector3 = .{0.1, 0.1, 0.2};
+    density : float = 0.01;
 }

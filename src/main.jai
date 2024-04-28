@@ -1,10 +1,10 @@
-// Everett
+// Eon
 // Main
 // Alex Hartford
 // March 2024
 
 /*
-    This is the Everett Project
+    This is the Eon Project
     Working towards a 3D Game Prototype of the Dark Night of the Soul idea.
 
     Todo:
@@ -12,7 +12,6 @@
     * Fix up shadow frustum generation, make it work with the sun, etc.
     * Fix up bounding box generation ( Should be able to just make a big approximation and call it a day.)
     * Water
-    * Distance Fog
 
     * Hair
 
@@ -103,14 +102,22 @@ program_state : struct {
 
 settings : struct {
     shadows             : bool = true;
-    line_mode           : bool;
-    normals_mode        : bool;
-    draw_bounding_boxes : bool;
-    framebuffer_debug   : bool;
-    skeleton_debug      : bool;
+    water               : bool = true;
     frustum_culling     : bool = true;
 
-    DEFAULT_CAMERA_ORIGIN :: Vector3.{0, 1, 10};
+    using debug : struct {
+        line_mode           : bool;
+        normals_mode        : bool;
+        bounding_boxes      : bool;
+        framebuffer_debug   : bool;
+        skeleton_debug      : bool;
+    }
+
+    using post_processing : struct {
+        fog : bool;
+    }
+
+    DEFAULT_CAMERA_ORIGIN :: Vector3.{0, 30, 30};
     DEFAULT_CAMERA_ANGLES :: Vector3.{0, 0, 0};
 }
 
@@ -126,22 +133,27 @@ input: Input;
 
 render_context : struct {
     using shaders : struct {
-        basic_shader     : Shader;
-        main_shader      : Shader;
-        terrain_shader   : Shader;
-        skybox_shader    : Shader;
-        highlight_shader : Shader;
+        basic_shader    : Shader;
+        main_shader     : Shader;
+        terrain_shader  : Shader;
+        skybox_shader   : Shader;
+        highlight_shader: Shader;
 
-        depth_shader     : Shader;
+        depth_shader    : Shader;
 
-        text_shader      : Shader;
-        screen_shader    : Shader;
+        water_shader    : Shader;
+
+        text_shader     : Shader;
+        screen_shader   : Shader;
         post_processing_shader : Shader;
     }
 
     directional_light : Directional_Light = .{direction = Vector3.{y=-1}};
-    skybox : Skybox;
-    sun : Celestial_Body;
+    skybox  : Skybox;
+    sun     : Celestial_Body;
+    water   : Water;
+
+    fog     : Fog;
 }
 
 
@@ -404,6 +416,7 @@ ImGui :: #import "ImGui";
 #load "skybox.jai";
 #load "shadow.jai";
 #load "water.jai";
+#load "fog.jai";
 
 #load "celestial_body.jai";
 #load "terrain.jai";

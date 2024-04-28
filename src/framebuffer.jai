@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Framebuffer
 // Alex Hartford
 // August 2023
@@ -26,16 +26,28 @@ draw_framebuffer_to_screen_with_post_processing :: (using framebuffer : Framebuf
 
         set_vec3(shader, "camera_position", program_state.camera.position);
 
+        // Set Fog Variables
         {
-            set_texture(shader, "color_texture", 0);
-            glActiveTexture(GL_TEXTURE0 + 0);
-            glBindTexture(GL_TEXTURE_2D, color_buffer);
+            set_int  (shader, "fog",            cast(int)settings.fog);
+            set_vec3 (shader, "fog_color",      render_context.fog.color);
+            set_float(shader, "fog_density",    render_context.fog.density);
         }
 
+        // Set Post-processing textures
         {
-            set_texture(shader, "depth_texture", 1);
-            glActiveTexture(GL_TEXTURE0 + 1);
-            glBindTexture(GL_TEXTURE_2D, depth_buffer);
+            // Color
+            {
+                set_texture(shader, "color_texture", 0);
+                glActiveTexture(GL_TEXTURE0 + 0);
+                glBindTexture(GL_TEXTURE_2D, color_buffer);
+            }
+
+            // Depth
+            {
+                set_texture(shader, "depth_texture", 1);
+                glActiveTexture(GL_TEXTURE0 + 1);
+                glBindTexture(GL_TEXTURE_2D, depth_buffer);
+            }
         }
 
         draw_quad();

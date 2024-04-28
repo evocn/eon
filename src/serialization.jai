@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Serialization
 // Alex Hartford
 // June 2023

@@ -1,3 +1,8 @@
+// Eon
+// Basic VS
+// Alex Hartford
+// April 2024
+
 #version 460 core
 layout (location = 0) in vec3 VertexPosition;
 

@@ -1,7 +1,7 @@
-// Everett
+// Eon
 // Render
 // Alex Hartford
-// June 2023
+// April 2024
 
 light_direction : Vector3;
 
@@ -16,7 +16,81 @@ render :: (game: Game) {
         start_drawing_to_depth_buffer(shadow_map.depth_buffer);
 
         if settings.shadows {
-            render_scene_to_depth_buffer(game);
+
+            // Render Scene to the depth buffer
+            {
+                // Draw Entities
+                {
+                    shader := use_depth_shader();
+                    defer disable_shaders();
+
+                    for entity : game.entities {
+                        draw_entity(entity, shader);
+                    }
+                }
+
+                // Draw Terrain
+                {
+                    shader := use_depth_shader();
+                    defer disable_shaders();
+
+                    draw_terrain(game.terrain, shader);
+                }
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    // Water pass, drawing to the water buffer.
+    {
+        start_drawing_to_framebuffer(render_context.water.reflection);
+
+        if settings.water {
+            // Render the scene to the water buffer
+            {
+                stored_camera_view := program_state.camera.view;
+                stored_camera_transform := program_state.camera.transform;
+
+                // Reflection
+                {
+
+                    // Invert the view matrix to beneath the planar water, so that we can record reflections in this draw pass.
+                    {
+                        using camera := program_state.camera;
+
+                        // We just need to flip the position to be under da sea, and the pitch to be looking at the inverse of the angle here.
+                        inverted_position : Vector3;
+                        {
+                            distance_from_camera_to_plane := camera.position.y - render_context.water.position.y;
+                            inversion_offset : Vector3 = .{0, -2 * distance_from_camera_to_plane, 0};
+
+                            inverted_position = camera.position + inversion_offset;
+                        }
+
+                        inverted_rotation : Quaternion;
+                        {
+                            yaw : Quaternion;
+                            set_from_axis_and_angle(*yaw, 0, -1, 0, camera.euler_angles.x);
+                            pitch : Quaternion;
+                            set_from_axis_and_angle(*pitch, -1, 0, 0, -1 * camera.euler_angles.y);
+                            inverted_rotation = yaw * pitch;
+                        }
+
+                        camera.transform = make_translation_matrix4(inverted_position) * rotation_matrix(Matrix4, inverted_rotation);
+                        camera.view = inverse(transform);
+                    }
+
+                    render_scene(game, "reflection");
+
+                }
+
+                // @TODO: Refraction?
+                {
+                }
+
+                program_state.camera.transform = stored_camera_transform;
+                program_state.camera.view = stored_camera_view;
+            }
         }
     }
 
@@ -30,7 +104,15 @@ render :: (game: Game) {
             }
             defer glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-            render_scene(game);
+            render_scene(game, "main");
+
+            // Render Water
+            {
+                shader := use_water_shader();
+                defer disable_shaders();
+
+                draw(render_context.water, shader);
+            }
 
             if program_state.mode == .EDITOR ||
                program_state.mode == .VIEW
@@ -90,14 +172,16 @@ render :: (game: Game) {
 
             draw_buffer_to_the_screen(shadow_map.depth_buffer.buffer, 0, 0, xx (window_height / 3), xx (window_height / 3));
 
-            draw_buffer_to_the_screen(framebuffer.depth_buffer, xx (window_width / 3), 0, xx (window_width / 3), xx (window_height / 3));
+            //draw_buffer_to_the_screen(framebuffer.depth_buffer, xx (cast(float)window_width / 3), 0, xx (window_width / 3), xx (window_height / 3));
+
+            draw_buffer_to_the_screen(render_context.water.reflection.color_buffer, xx (cast(float)window_width * 2 / 3), 0, xx (window_width / 3), xx (window_height / 3));
         }
     }
 
     print_gl_errors();
 }
 
-render_scene :: (game: Game) {
+render_scene :: (game: Game, pass : string) {
     view_frustum := calculate_view_frustum(program_state.camera.projection, program_state.camera.view);
 
     // Draw Entities
@@ -121,7 +205,7 @@ render_scene :: (game: Game) {
             entities_drawn += 1;
         }
 
-        screen_print(tprint("Drawn: %", entities_drawn));
+        screen_print(tprint("[%] Drawn: %", pass, entities_drawn));
     }
 
     // Draw Terrain
@@ -153,29 +237,6 @@ render_scene :: (game: Game) {
     }
 }
 
-
-
-render_scene_to_depth_buffer :: (game: Game) {
-    // Draw Entities
-    {
-        shader := use_depth_shader();
-        defer disable_shaders();
-
-        for entity : game.entities {
-            draw_entity(entity, shader);
-        }
-    }
-
-    // Draw Terrain
-    {
-        shader := use_depth_shader();
-        defer disable_shaders();
-
-        draw_terrain(game.terrain, shader);
-    }
-}
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Editor Rendering Overlays
 
@@ -192,7 +253,7 @@ render_editor_overlays :: (game: Game) {
             draw_entity(game.entities[editor.selected_entity], shader);
         }
 
-        if settings.draw_bounding_boxes {
+        if settings.bounding_boxes {
             for entity : game.entities {
                 draw_bounding_box(entity, shader);
             }

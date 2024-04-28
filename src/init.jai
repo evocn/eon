@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Init
 // Alex Hartford
 // June 2023
@@ -16,7 +16,7 @@ init :: () -> bool {
         SDL_Init(SDL_INIT_VIDEO);
 
         // Create an application window with the following settings:
-        window = SDL_CreateWindow("Everett",
+        window = SDL_CreateWindow("Eon",
             600, 250, cast(s32)window_width, cast(s32)window_height,
             SDL_WINDOW_OPENGL|SDL_WINDOW_SHOWN);
 
@@ -90,6 +90,7 @@ init :: () -> bool {
         render_context.highlight_shader = make_shader("main.vs", "highlight.fs");
 
         render_context.depth_shader     = make_shader("depth.vs", "depth.fs");
+        render_context.water_shader     = make_shader("water.vs", "water.fs");
 
         render_context.text_shader      = make_shader("text.vs", "text.fs");
         render_context.screen_shader    = make_shader("screen.vs", "screen.fs");
@@ -164,13 +165,25 @@ init :: () -> bool {
         }
 
         // Rendering Structures
-        load_cubemap_textures(*render_context.skybox, "yellow");
+        {
+            {
+                render_context.sun.position = Vector3.{0, 400, 400};
+                render_context.sun.scale = 100;
+            }
 
-        render_context.sun.position = Vector3.{0, 400, 400};
-        render_context.sun.scale = 100;
+            {
+                render_context.water.position = Vector3.{0, -0.1, 0};
+                set_from_axis_and_angle(*render_context.water.orientation, .{1, 0, 0}, radians(-90.0));
+                render_context.water.scale = 125;
+                init_rendering_objects(*render_context.water);
+            }
 
-        init_rendering_objects(*shadow_map);
-        init_rendering_objects(*framebuffer);
+            load_cubemap_textures(*render_context.skybox, "yellow");
+
+            init_rendering_objects(*shadow_map);
+
+            init_rendering_objects(*framebuffer);
+        }
     }
 
     end_time := cast(float32)seconds_since_init();

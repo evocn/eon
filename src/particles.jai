@@ -1,5 +1,4 @@
 
-
 // Instancing Code... Maybe?
 /*
 glBindVertexArray(VAO_INSTANCED);

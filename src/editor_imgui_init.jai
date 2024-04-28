@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // ImGui Initialization
 // Alex Hartford
 // June 2023

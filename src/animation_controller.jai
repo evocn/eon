@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Animation Controller
 // Alex Hartford
 // April 2024

@@ -1,7 +1,19 @@
-// Everett
+// Eon
 // Shader
 // Alex Hartford
 // June 2023
+
+// @TODO: This model is stupid.
+
+use_water_shader :: () -> Shader {
+    shader := render_context.water_shader;
+    use_shader(shader);
+
+    set_mat4(shader, "projection", program_state.camera.projection);
+    set_mat4(shader, "view", program_state.camera.view);
+
+    return shader;
+}
 
 use_depth_shader :: () -> Shader {
     shader := render_context.depth_shader;

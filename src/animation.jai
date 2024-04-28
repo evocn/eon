@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Animation
 // Alex Hartford
 // March 2024

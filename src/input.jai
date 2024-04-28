@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Input
 // Alex Hartford
 // June 2023
@@ -79,8 +79,8 @@ handle_events_and_gather_input :: () {
 
                 else if event.key.keysym.sym == SDLK_LSHIFT  release(*input.west);
                 else if event.key.keysym.sym == SDLK_LCTRL   release(*input.east);
-                else if event.key.keysym.sym == SDLK_k       release(*input.north);
-                else if event.key.keysym.sym == SDLK_j       release(*input.south);
+                else if event.key.keysym.sym == SDLK_e       release(*input.north);
+                else if event.key.keysym.sym == SDLK_q       release(*input.south);
 
             case SDL_KEYDOWN;
                 if program_state.imgui_capturing_keyboard then continue;
@@ -108,7 +108,7 @@ handle_events_and_gather_input :: () {
                     }
 
                     if event.key.keysym.sym == SDLK_b {
-                        settings.draw_bounding_boxes = !settings.draw_bounding_boxes;
+                        settings.bounding_boxes = !settings.bounding_boxes;
                     }
 
                     if event.key.keysym.sym == SDLK_g {
@@ -117,6 +117,10 @@ handle_events_and_gather_input :: () {
 
                     if event.key.keysym.sym == SDLK_h {
                         settings.skeleton_debug = !settings.skeleton_debug;
+                    }
+
+                    if event.key.keysym.sym == SDLK_p {
+                        settings.fog = !settings.fog;
                     }
                 }
 
@@ -144,8 +148,8 @@ handle_events_and_gather_input :: () {
 
                     else if event.key.keysym.sym == SDLK_LSHIFT  press(*input.west);
                     else if event.key.keysym.sym == SDLK_LCTRL   press(*input.east);
-                    else if event.key.keysym.sym == SDLK_k       press(*input.north);
-                    else if event.key.keysym.sym == SDLK_j       press(*input.south);
+                    else if event.key.keysym.sym == SDLK_e       press(*input.north);
+                    else if event.key.keysym.sym == SDLK_q       press(*input.south);
 
                     else if event.key.keysym.sym == SDLK_SPACE   press(*input.start);
                     else if event.key.keysym.sym == SDLK_ESCAPE  press(*input.select);

@@ -1,7 +1,7 @@
-// Author: Alex Hartford
-// Program: Everett
-// File: Depthbuffer
-// Date: August 2023
+// Eon
+// Depthbuffer
+// Alex Hartford
+// August 2023
 
 Depth_Buffer :: struct {
     fbo, buffer : GLuint;

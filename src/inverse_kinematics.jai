@@ -1,7 +1,7 @@
-
-
+// Eon
 // Inverse Kinematics
-//
+// Alex Hartford
+// June 2023
 
 fabrik :: (using line: *Line, target : Vector3) -> Line, bool {
     // Check if it's too far to reach.

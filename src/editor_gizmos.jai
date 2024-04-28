@@ -1,9 +1,7 @@
-// Everett
+// Eon
 // Gizmos
 // Alex Hartford
 // June 2023
-
-
 
 maybe_select_entity :: (entities: [..] *Entity) {
     if input.left_mouse.just_pressed {

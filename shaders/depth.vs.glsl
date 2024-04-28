@@ -1,3 +1,8 @@
+// Eon
+// Depth VS
+// Alex Hartford
+// April 2024
+
 #version 460 core
 layout (location = 0) in vec3  VertexPosition;
 layout (location = 3) in vec4  VertexWeights;

@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Color Palette
 // Alex Hartford
 // June 2023

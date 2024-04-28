@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Character Controller
 // Alex Hartford
 // March 2024

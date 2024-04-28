@@ -1,13 +1,11 @@
-// Everett
+// Eon
 // Terrain
 // Alex Hartford
 // April 2024
 
 /*
 Goals:
-* Triangle Strips
 * Nice scaling / stretching
-* Terrain editing in-engine
 * Tessellation?
 */
 

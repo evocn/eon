@@ -1,4 +1,4 @@
-// Everett
+// Eon
 // Build
 // Alex Hartford
 // March 2024
@@ -11,7 +11,7 @@ build :: () {
     }
 
     options := get_build_options(workspace);
-    options.output_executable_name = "everett";
+    options.output_executable_name = "eon";
 
     // NOTE(alex): this refers to a relative path from this (build.jai) file.
     options.output_path = "bin";

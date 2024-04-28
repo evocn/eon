@@ -1,3 +1,8 @@
+// Eon
+// Depth FS
+// Alex Hartford
+// April 2024
+
 #version 460 core
 
 void main()

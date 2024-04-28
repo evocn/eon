@@ -1,3 +1,8 @@
+// Eon
+// Basic FS
+// Alex Hartford
+// April 2024
+
 #version 460 core
 out vec4 FragColor;
 
