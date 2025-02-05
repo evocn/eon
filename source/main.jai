@@ -373,50 +373,19 @@ ImGui :: #import "ImGui";
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#load "state.jai";
 #load "utils.jai";
 #load "init.jai";
 #load "input.jai";
-#load "camera.jai";
-
-#load "font.jai";
-
-#load "program_state.jai";
-
-#load "editor.jai";
-#load "editor_imgui_init.jai";
-#load "editor_controls.jai";
-#load "editor_undo.jai";
-#load "editor_gizmos.jai";
-
-#load "game.jai";
-#load "simulate.jai";
-#load "entity.jai";
-#load "serialization.jai";
-#load "character_controller.jai";
-
-#load "debug.jai";
 
 #load "render.jai";
-#load "primitives.jai";
-#load "parse_utils.jai";
-#load "mesh.jai";
+#load "debug.jai";
 
-#load "animation.jai";
-#load "animation_controller.jai";
+#load "camera.jai";
 
-#load "color.jai";
-#load "light.jai";
-#load "frustum.jai";
+#load "graphics/graphics.jai";
+#load "game/game.jai";
+#load "editor/editor.jai";
+#load "animation/animation.jai";
 
-#load "shader.jai";
-#load "texture.jai";
-#load "framebuffer.jai";
-#load "depthbuffer.jai";
-
-#load "skybox.jai";
-#load "shadow.jai";
-#load "water.jai";
-#load "fog.jai";
-
-#load "celestial_body.jai";
-#load "terrain.jai";
+#load "experiments/experiments.jai";

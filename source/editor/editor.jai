@@ -3,6 +3,11 @@
 // Alex Hartford
 // June 2023
 
+#load "editor_imgui_init.jai";
+#load "editor_controls.jai";
+#load "editor_undo.jai";
+#load "editor_gizmos.jai";
+
 update_and_draw_editor :: (game: *Game) {
     io := ImGui.GetIO();
     program_state.imgui_capturing_mouse    = io.WantCaptureMouse;

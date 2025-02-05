@@ -3,6 +3,8 @@
 // Alex Hartford
 // June 2023
 
+#load "parse_utils.jai";
+
 save_entities :: (entities : [..] *Entity, filename : string) -> success : bool {
     builder : String_Builder;
     defer free_buffers(*builder);

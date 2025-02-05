@@ -3,6 +3,9 @@
 // Alex Hartford
 // March 2024
 
+#load "animation_controller.jai";
+//#load "inverse_kinematics.jai";
+
 Joint_Sample :: struct
 {
     local_position      : Vector3;

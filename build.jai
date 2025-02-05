@@ -1,76 +1,210 @@
 // Eon
 // Build
 // Alex Hartford
-// March 2024
+
+// This file contains a metaprogram whose objective is to build the target program contained in source/.
+
+
+// Shared between the build program and the target program.
+shared_data :: #string DONE
+
+build_settings : struct {
+    configuration : enum {
+        DEBUG;
+        RELEASE;
+    }
+}
+
+program_title :: "Eon";
+
+DONE
+#run add_build_string(shared_data, w = -1);
+
+////////////////////////////////////////////////////////////////////////////////
 
 build :: () {
-    workspace := compiler_create_workspace("Main Workspace");
-    if !workspace {
+    // Create target program workspace
+    w := compiler_create_workspace("Final Program");
+    if !w {
         print("Workspace creation failed.\n");
         return;
     }
+    options := get_build_options(w);
 
-    options := get_build_options(workspace);
-    options.output_executable_name = "eon";
 
-    // NOTE(alex): this refers to a relative path from this (build.jai) file.
-    options.output_path = "bin";
-    options.intermediate_path = "bin/.build";
-    options.output_type = .EXECUTABLE;
-    options.text_output_flags = 2;
+    // Handle command-line arguments / plugins
+    {
+        for argument: options.compile_time_command_line {
+            if argument == {
+                case "release"; {
+                    build_settings.configuration = .RELEASE;
+                }
+            }
+        }
+    }
 
-    set_build_options(options, workspace);
-    set_build_options_dc(.{do_output=false});
 
-	compiler_begin_intercept(workspace);
+    // Build options for the Target Workspace
+    {
+        options.output_executable_name = program_title;
 
-    add_build_file("src/main.jai", workspace);
+        options.output_path = "bin";
+        options.intermediate_path = "bin/.build";
+        options.output_type = .EXECUTABLE;
 
-	// Set up ctags options
-	ctags: CTags;
-	ctags.output_filename = "src/tags";
-	ctags.base_path = get_working_directory();
-	defer reset(*ctags);
+        // Configure Compiler output printing
+        options.text_output_flags = 0;
+        //options.text_output_flags |= .OUTPUT_LINK_LINE;
+        options.text_output_flags |= .OUTPUT_TIMING_INFO;
 
-	while true {
-		message := compiler_wait_for_message();
-		if !message continue;
+        if build_settings.configuration == {
+            case .DEBUG;    set_optimization(*options, .DEBUG);
+            case .RELEASE;  set_optimization(*options, .VERY_OPTIMIZED);
+        }
 
-		if message.workspace == workspace {
-			process_message(*ctags, message);
-		}
+        set_build_options(options, w);
+    }
 
-		if message.kind == .COMPLETE break;
-	}
 
-    // Create a manifest and an icon file.
-	#if OS == .WINDOWS {
-        icons_path :: "assets/misc";
+    // Init plugins
+    {
+        plugin_names : [..] string;
+        defer array_reset(*plugin_names);
 
-		exe_name := sprint("%/%.exe", options.output_path, options.output_executable_name);
-		defer free(exe_name);
+        if build_settings.configuration == .DEBUG {
+            array_add(*plugin_names, "Iprof");
+        }
 
-        ico_data := create_ico_file_from_bitmap_filename(tprint("%/icon.png", icons_path));
-		defer free(ico_data);
+        init_plugins(plugin_names, *plugins, w);
 
-		set_icon_by_data(exe_name, ico_data);
+        for plugins {
+            //if it.log_help then it.log_help(it);
+        }
+    }
 
-        generated_icon_file_path := tprint("%/generated.ico", icons_path);
-        write_entire_file(generated_icon_file_path, ico_data);
-		print("Icon     added: %\n", set_icon_by_filename(exe_name, generated_icon_file_path));
+    {
+        // Interception begins
+        intercept_flags: Intercept_Flags;
+        for plugins if it.before_intercept it.before_intercept(it, *intercept_flags);
 
-		manifest_options: Manifest_Options;
-		print("Manifest added: %\n", add_manifest_to_executable(exe_name, manifest_options));
+        compiler_begin_intercept(w, intercept_flags);
 
-		#import "Ico_File";
-		#import "Windows_Resources";
-	}
+        // Add files to the Target Workspace
+        {
+            for plugins if it.add_source it.add_source(it);
+
+            // Files to compile
+            {
+                add_build_file(tprint("%/source/main.jai", #filepath), w);
+            }
+
+            // User Build Options
+            {
+                add_build_string(shared_data, w);
+
+                build_configuration_string : string;
+                build_configuration_string = tprint("BUILD_TYPE :: build_settings.configuration.%;", build_settings.configuration);
+                add_build_string(build_configuration_string, w);
+            }
+        }
+
+        message_loop(w);
+
+        compiler_end_intercept(w);
+
+        for plugins if it.finish it.finish(it);
+        for plugins if it.shutdown it.shutdown(it);
+    }
+
+    // Publishing work
+    {
+        log("\nCompilation ended on the target workspace. On to publishing work!");
+
+        executable_path := sprint("%/%.exe", options.output_path, options.output_executable_name);
+        defer free(executable_path);
+
+        icon_path :: "assets/publishing/icon.png";
+
+        create_and_apply_manifest_and_icon_files(executable_path, icon_path);
+    }
+
+    // Build Program (this one) settings.
+    {
+        // No executable!
+        set_build_options_dc(.{
+            do_output = false,
+            write_added_strings = false
+        });
+    }
 }
 
-#run build();
+#run,stallable build(); // If plugins have assertions, they may stall.
 
+////////////////////////////////////////////////////////////////////////////////
+
+message_loop :: (w: Workspace) {
+
+    // Ctags module setup
+    ctags: CTags;
+    defer reset(*ctags);
+    ctags.output_filename = "tags";
+    ctags.base_path = sprint("%", #filepath);
+    defer free(ctags.base_path);
+
+    while true {
+        message := compiler_wait_for_message();
+        if !message continue;
+
+        if message.workspace == w {
+            process_message(*ctags, message);
+
+            for plugin : plugins if plugin.message plugin.message(plugin, message);
+        }
+
+        if message.kind == .COMPLETE return;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+create_and_apply_manifest_and_icon_files :: (executable_path : string, icon_path : string) {
+    #if OS == .WINDOWS {
+        #import "Ico_File";
+        #import "Windows_Resources";
+
+        ico_data := create_ico_file_from_bitmap_filename(icon_path);
+        defer free(ico_data);
+
+        ico_path := sprint("%.ico", path_strip_extension(icon_path));
+        defer free(ico_path);
+        // Save .ico back out for inspection
+        {
+            write_entire_file(ico_path, ico_data);
+        }
+
+        success := set_icon_by_data(executable_path, ico_data);
+        print("Icon     added: %\n", success);
+
+        manifest_options: Manifest_Options;
+        success = add_manifest_to_executable(executable_path, manifest_options);
+
+        print("Manifest added: %\n", success);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Standard Library
 #import "Basic";
 #import "Compiler";
+#import "String";
 #import "File";
 
+// Plugins
+#import "Metaprogram_Plugins";
+#import "Iprof";
+
+plugins: [..] *Metaprogram_Plugin;
+
+// Local Project Modules
 #import "ctags";
