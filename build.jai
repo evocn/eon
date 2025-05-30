@@ -31,10 +31,10 @@ build :: () {
     }
     options := get_build_options(w);
 
-
     // Handle command-line arguments / plugins
+    arguments := options.compile_time_command_line;
     {
-        for argument: options.compile_time_command_line {
+        for argument: arguments {
             if argument == {
                 case "release"; {
                     build_settings.configuration = .RELEASE;
@@ -42,7 +42,6 @@ build :: () {
             }
         }
     }
-
 
     // Build options for the Target Workspace
     {
@@ -68,18 +67,9 @@ build :: () {
 
     // Init plugins
     {
-        plugin_names : [..] string;
-        defer array_reset(*plugin_names);
+        success, plugins_to_create := parse_plugin_arguments(arguments);
 
-        if build_settings.configuration == .DEBUG {
-            array_add(*plugin_names, "Iprof");
-        }
-
-        init_plugins(plugin_names, *plugins, w);
-
-        for plugins {
-            //if it.log_help then it.log_help(it);
-        }
+        init_plugins(plugins_to_create, *plugins, w);
     }
 
     {

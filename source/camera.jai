@@ -139,7 +139,8 @@ resolve_camera_flying_inputs :: (using camera_flying: *Camera_Flying, delta_time
     // Set Transforms
     transform = make_translation_matrix4(position) * rotation_matrix(Matrix4, rotation);
 
-    view = inverse(transform);
+    success:, view = inverse(transform);
+    assert(success, "Failed to take matrix inverse!\n");
 
     aspect_ratio := window_width / cast(float)window_height;
     projection = make_projection_matrix(radians(fov), aspect_ratio, 1.0, 1000.0);
@@ -215,7 +216,8 @@ resolve_camera_walking_inputs :: (using camera_walking: *Camera_Walking, delta_t
     // Set Transforms
     transform = make_translation_matrix4(position) * rotation_matrix(Matrix4, rotation);
 
-    view = inverse(transform);
+    success:, view = inverse(transform);
+    assert(success, "Failed to take matrix inverse!\n");
 
     aspect_ratio := window_width / cast(float)window_height;
     projection = make_projection_matrix(radians(fov), aspect_ratio, 1.0, 1000.0);

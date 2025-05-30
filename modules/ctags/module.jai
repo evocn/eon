@@ -85,7 +85,7 @@ process_message :: (using ctags: *CTags, message: *Message) {
 		// print the symbols in ctags format:
 		builder: String_Builder;
 		for symbols {
-			print_to_builder(*builder, "%\t%\t/\\%%%l\\%%%c/;\"", it.name, it.filename, it.line, it.column);
+			print_to_builder(*builder, "%\t%\t/\\\%%l\\\%%c/;\"", it.name, it.filename, it.line, it.column);
 			if #complete it.kind == {
 				case .ENUM;
 					print_to_builder(*builder, "\tkind:g");

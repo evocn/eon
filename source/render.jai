@@ -77,7 +77,8 @@ render :: (game: Game) {
                         }
 
                         camera.transform = make_translation_matrix4(inverted_position) * rotation_matrix(Matrix4, inverted_rotation);
-                        camera.view = inverse(transform);
+                        success:, camera.view = inverse(transform);
+                        assert(success, "Matrix inverse failed!\n");
                     }
 
                     render_scene(game, "reflection");
@@ -156,7 +157,7 @@ render :: (game: Game) {
         shader := use_text_shader();
         defer disable_shaders();
         {
-            font, found := table_find(*fonts, "Header");
+            found, font := table_find_new(*fonts, "Header");
             for debug.lines {
                 draw_text(shader, font, it, 10, window_height - 10 - cast(float)(it_index + 1) * font.height, 1.0);
             }

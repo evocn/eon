@@ -18,7 +18,10 @@ generate_mouse_ray :: (x : float, y : float) -> Ray {
     mouse_position_in_clip_space.z = -1.0;
     mouse_position_in_clip_space.w = 1;
 
-    mouse_position_in_world_space := inverse(program_state.camera.projection * program_state.camera.view) * mouse_position_in_clip_space;
+    view_projection := program_state.camera.projection * program_state.camera.view;
+    success, inverse_view_projection := inverse(view_projection);
+    assert(success, "Matrix inverse failed!\n");
+    mouse_position_in_world_space := inverse_view_projection * mouse_position_in_clip_space;
 
     ray : Ray;
     ray.origin = program_state.camera.position;

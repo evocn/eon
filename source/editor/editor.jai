@@ -3,7 +3,7 @@
 // Alex Hartford
 // June 2023
 
-#load "editor_imgui_init.jai";
+#load "imgui_sdl_gl.jai";
 #load "editor_controls.jai";
 #load "editor_undo.jai";
 #load "editor_gizmos.jai";

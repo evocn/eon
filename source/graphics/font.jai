@@ -42,7 +42,7 @@ render_text :: (font : Font, text : string, x : float, y : float, scale : float)
 
     for cast([] u8)text
     {
-        glyph, found := table_find(*font.characters, it);
+        found, glyph := table_find_new(*font.characters, it);
         assert(found);
 
         xpos := x + glyph.bearing.x * scale;

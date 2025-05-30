@@ -1,7 +1,3 @@
-// Eon
-// ImGui Initialization
-// Alex Hartford
-// June 2023
 
 // Data
 g_Time: u64 = 0;
@@ -28,13 +24,10 @@ cursor_resize_ew: *SDL_Cursor;
 cursor_resize_nesw: *SDL_Cursor;
 cursor_resize_nwse: *SDL_Cursor;
 
-// This is the main rendering function that you have to implement and provide
-// to ImGui (via setting up 'RenderDrawListsFn' in the ImGuiIO structure) Note
-// that this implementation is little overcomplicated because we are
-// saving/setting up/restoring every OpenGL state explicitly, in order to be
-// able to run within any OpenGL engine that doesn't do so.  If text or lines
-// are blurry when integrating ImGui in your engine: in your Render function,
-// try translating your projection matrix by (0.5f,0.5f) or (0.375f,0.375f)
+
+// This is the main rendering function that you have to implement and provide to ImGui (via setting up 'RenderDrawListsFn' in the ImGuiIO structure)
+// Note that this implementation is little overcomplicated because we are saving/setting up/restoring every OpenGL state explicitly, in order to be able to run within any OpenGL engine that doesn't do so.
+// If text or lines are blurry when integrating ImGui in your engine: in your Render function, try translating your projection matrix by (0.5f,0.5f) or (0.375f,0.375f)
 ImGui_ImplSdl_RenderDrawLists :: (draw_data: *ImGui.ImDrawData) #c_call {
     // @@ Watch out, we don't have a context here!
 
@@ -80,8 +73,7 @@ ImGui_ImplSdl_RenderDrawLists :: (draw_data: *ImGui.ImDrawData) #c_call {
     // Setup viewport, orthographic projection matrix
     glViewport(0, 0, xx fb_width, xx fb_height);
 
-    new_context: Context;
-    push_context new_context {
+    push_context {
         ortho_projection := orthographic_projection_matrix(0, io.DisplaySize.x, io.DisplaySize.y, 0, 0, 1);
         ortho_projection = transpose(ortho_projection);
 
@@ -110,7 +102,7 @@ ImGui_ImplSdl_RenderDrawLists :: (draw_data: *ImGui.ImDrawData) #c_call {
                 else {
                     glBindTexture(GL_TEXTURE_2D, xx pcmd.TextureId);
                     glScissor(xx pcmd.ClipRect.x, xx (fb_height - pcmd.ClipRect.w), xx (pcmd.ClipRect.z - pcmd.ClipRect.x), xx (pcmd.ClipRect.w - pcmd.ClipRect.y));
-                    
+
                     glDrawElements(GL_TRIANGLES, pcmd.ElemCount, GL_UNSIGNED_SHORT, idx_buffer_offset);
                 }
                 idx_buffer_offset += pcmd.ElemCount;
@@ -376,9 +368,11 @@ ImGui_ImplSdl_NewFrame :: (window: *SDL_Window) {
     // (we already got mouse wheel, keyboard keys & characters from SDL_PollEvent())
     mx, my: s32;
     mouseMask := SDL_GetMouseState(*mx, *my);
-    if (SDL_GetWindowFlags(window) & SDL_WINDOW_MOUSE_FOCUS) io.MousePos = .{xx mx, xx my};   // Mouse position, in pixels (set to -1,-1 if no mouse / on another screen, etc.)
-    else 
+    if (SDL_GetWindowFlags(window) & SDL_WINDOW_MOUSE_FOCUS) {
+        io.MousePos = .{xx mx, xx my};   // Mouse position, in pixels (set to -1,-1 if no mouse / on another screen, etc.)
+    } else {
         io.MousePos = .{-FLOAT32_MAX,-FLOAT32_MAX};
+    }
 
     io.MouseDown[0] = (g_MousePressed[0] || (mouseMask & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0);      // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
     io.MouseDown[1] = (g_MousePressed[1] || (mouseMask & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0);

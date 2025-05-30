@@ -41,7 +41,7 @@ Skeleton_Pose :: struct
 }
 
 // Allocate a pose for a given skeleton and set it to the bind pose
-make_pose_for_skeleton :: (skeleton : *Skeleton) -> Skeleton_Pose #must
+make_pose_for_skeleton :: (skeleton : *Skeleton) -> Skeleton_Pose
 {
     result : Skeleton_Pose;
     result.skeleton = skeleton;
@@ -86,9 +86,9 @@ interpolate_joint_samples :: inline (
     b : Joint_Sample,
     t : float,
     interpolation_mode : Interpolation_Mode
-) -> Joint_Sample #must
+) -> Joint_Sample
 {
-    nlerp_shortest :: (a : Quaternion, b : Quaternion, t : float) -> Quaternion #must
+    nlerp_shortest :: (a : Quaternion, b : Quaternion, t : float) -> Quaternion
     {
         first  := a;
         second := b;
@@ -98,7 +98,7 @@ interpolate_joint_samples :: inline (
         return nlerp (first, second, t);
     }
 
-    slerp_shortest :: (a : Quaternion, b : Quaternion, t : float) -> Quaternion #must
+    slerp_shortest :: (a : Quaternion, b : Quaternion, t : float) -> Quaternion
     {
         first  := a;
         second := b;
@@ -139,7 +139,7 @@ sample_animation :: (
     time_in_samples = fmod_cycling(time_in_samples, cast (float) sample_count);
     for joint : joints
     {
-        joint_index, ok := table_find(*pose.skeleton.name_to_joint_id, joint.name);
+        ok, joint_index := table_find_new(*pose.skeleton.name_to_joint_id, joint.name);
         if !ok
             continue;
         first_index  := cast (s64)time_in_samples;

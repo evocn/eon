@@ -112,7 +112,7 @@ draw_bounding_box :: (using entity : Entity, shader : Shader) {
 
 find_entity_mesh :: (using entity: *Entity) {
     found_mesh : bool;
-    mesh, found_mesh = table_find(*mesh_catalogue, mesh_name);
+    found_mesh, mesh = table_find_new(*mesh_catalogue, mesh_name);
     if !found_mesh {
         log_error("Entity's mesh was not found: %.", mesh_name);
         mesh = null;
@@ -121,7 +121,7 @@ find_entity_mesh :: (using entity: *Entity) {
 
 find_entity_animation :: (using entity: *Entity) {
     found_anim : bool;
-    animation, found_anim = table_find(*animation_catalogue, animation_name);
+    found_anim, animation = table_find_new(*animation_catalogue, animation_name);
     if !found_anim {
         log_error("Entity's anim was not found: %.", animation_name);
         animation = null;

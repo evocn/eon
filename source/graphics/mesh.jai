@@ -299,13 +299,18 @@ load_mesh_from_file :: (full_path : string, mesh: *Mesh) -> bool {
         line, found = consume_next_line(*handler);
         if line != "joints:" then return error_out(handler, "Expected 'joints:', got '%' instead.", line);
 
-        for * mesh.joints
-            if !parse_joint(*handler, mesh, it) then return error_out(handler, "Could not parse joint %.", it_index);
+        for * mesh.joints {
+            if !parse_joint(*handler, mesh, it) {
+                return error_out(handler, "Could not parse joint %.", it_index);
+            }
+        }
 
 
         // Inverse all the bind transforms we calculated while parsing the joints
-        for * mesh.joints
-            it.inverse_bind_transform = inverse(it.inverse_bind_transform);
+        for * mesh.joints {
+            success:, it.inverse_bind_transform = inverse(it.inverse_bind_transform);
+            assert(success, "Failed to take matrix inverse!\n");
+        }
     }
 
     // Parse vertices
